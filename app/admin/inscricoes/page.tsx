@@ -102,9 +102,10 @@ export default function InscricoesPage() {
       if (filtroCargo)  query = query.ilike('cargo', filtroCargo);
       if (filtroFuncao) query = query.ilike('funcao', filtroFuncao);
 
-      // Aplicar filtro de múltiplos cargos se selecionados nas checkboxes
+      // Aplicar filtro de múltiplos cargos se selecionados nas checkboxes (case-insensitive via ilike)
       if (selectedCargos.length > 0) {
-        query = query.in('cargo', selectedCargos);
+        const orQuery = selectedCargos.map(cargo => `cargo.ilike.${cargo}`).join(',');
+        query = query.or(orQuery);
       }
 
       const { data, error } = await query;
