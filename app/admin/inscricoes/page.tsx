@@ -396,7 +396,7 @@ export default function InscricoesPage() {
 
         {/* Tabela */}
         <div className="bg-white shadow rounded-lg overflow-hidden">
-          <div className="overflow-auto max-h-[65vh]">
+          <div className="overflow-auto max-h-[65vh]" style={{ scrollbarGutter: 'stable' }}>
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50 sticky top-0 z-10 shadow-[0_1px_0_0_rgba(229,231,235,1)]">
                 <tr>
@@ -443,7 +443,7 @@ export default function InscricoesPage() {
                       </th>
                     </>
                   )}
-                  <th className="px-3 py-2.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="w-32 px-3 py-2.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider pl-3 pr-6">
                     Ações
                   </th>
                 </tr>
@@ -494,7 +494,7 @@ export default function InscricoesPage() {
                         </td>
                       </>
                     )}
-                    <td className="px-3 py-3 whitespace-nowrap text-sm font-medium">
+                    <td className="px-3 py-3 whitespace-nowrap text-sm font-medium pl-3 pr-6">
                       <div className="flex flex-wrap items-center gap-2">
                         <Button
                           size="sm"
