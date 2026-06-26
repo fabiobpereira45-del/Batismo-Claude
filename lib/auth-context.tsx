@@ -19,7 +19,6 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// Busca o perfil e retorna null se não encontrado (sem lançar erro)
 async function fetchPerfil(userId: string) {
   const { data, error } = await supabase
     .from('perfil_usuarios')
@@ -27,7 +26,8 @@ async function fetchPerfil(userId: string) {
     .eq('id', userId)
     .single();
   if (error) {
-    console.warn('fetchPerfil error:', error.message);
+    // PGRST116 = nenhuma linha encontrada — não é erro crítico
+    console.warn('fetchPerfil:', error.message);
     return null;
   }
   return data;
@@ -35,16 +35,18 @@ async function fetchPerfil(userId: string) {
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(true); // true apenas durante init
   const [isMaster, setIsMaster] = useState(false);
-  // Flag para evitar que o onAuthStateChange processe eventos enquanto o signIn/signOut interno já está em andamento
-  const skipNextAuthEvent = useRef(false);
+
+  // Quando true, o próximo evento do onAuthStateChange é ignorado.
+  // Usado para evitar double-processing quando o próprio código dispara signIn/signOut.
+  const skipNextEvent = useRef(false);
 
   useEffect(() => {
     let mounted = true;
 
-    // Inicializa a sessão existente UMA única vez
-    const initializeAuth = async () => {
+    // ─── Inicialização: verifica sessão existente ───────────────────────────
+    const initAuth = async () => {
       try {
         const { data: { session } } = await supabase.auth.getSession();
 
@@ -52,79 +54,58 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           const perfil = await fetchPerfil(session.user.id);
 
           if (perfil && perfil.status !== 'aprovado') {
-            // Usuário não aprovado — faz logout silencioso
-            skipNextAuthEvent.current = true;
+            // Sessão existente mas usuário não aprovado — derruba
+            skipNextEvent.current = true;
             await supabase.auth.signOut();
-            if (mounted) {
-              setUser(null);
-              setIsMaster(false);
-            }
-          } else {
-            if (mounted) {
-              setUser({
-                id: session.user.id,
-                email: session.user.email || '',
-                role: perfil?.role || 'padrao',
-              });
-              setIsMaster(
-                perfil?.role === 'master' ||
-                session.user.user_metadata?.role === 'master'
-              );
-            }
+            if (mounted) { setUser(null); setIsMaster(false); }
+          } else if (mounted) {
+            setUser({
+              id: session.user.id,
+              email: session.user.email || '',
+              role: perfil?.role || 'padrao',
+            });
+            setIsMaster(
+              perfil?.role === 'master' ||
+              session.user.user_metadata?.role === 'master'
+            );
           }
-        } else {
-          if (mounted) {
-            setUser(null);
-            setIsMaster(false);
-          }
-        }
-      } catch (error) {
-        console.error('Auth init error:', error);
-        if (mounted) {
+        } else if (mounted) {
           setUser(null);
           setIsMaster(false);
         }
+      } catch (e) {
+        console.error('initAuth error:', e);
+        if (mounted) { setUser(null); setIsMaster(false); }
       } finally {
-        if (mounted) {
-          setLoading(false);
-        }
+        // loading só existe durante a verificação inicial — depois é sempre false
+        if (mounted) setLoading(false);
       }
     };
 
-    initializeAuth();
+    initAuth();
 
-    // O onAuthStateChange lida apenas com mudanças APÓS a inicialização
-    // (ex: expiração de token, login em outra aba, etc.)
-    const { data: authListener } = supabase.auth.onAuthStateChange(
+    // ─── Listener: mudanças externas de sessão ──────────────────────────────
+    // Cobre: logout em outra aba, expiração de token, OAuth callback
+    // NÃO é usado para o fluxo de login manual (gerenciado pelo signIn())
+    const { data: listener } = supabase.auth.onAuthStateChange(
       async (event, session) => {
-        // Ignorar eventos disparados por ações internas (signIn/signOut que já tratamos)
-        if (skipNextAuthEvent.current) {
-          skipNextAuthEvent.current = false;
+        // Pular evento que foi disparado pelo próprio código desta app
+        if (skipNextEvent.current) {
+          skipNextEvent.current = false;
           return;
         }
 
-        // Só reagir a eventos SIGNED_OUT ou TOKEN_REFRESHED, não a SIGNED_IN
-        // pois o signIn já trata o estado diretamente
         if (event === 'SIGNED_OUT') {
-          if (mounted) {
-            setUser(null);
-            setIsMaster(false);
-            setLoading(false);
-          }
+          if (mounted) { setUser(null); setIsMaster(false); }
           return;
         }
 
         if (event === 'TOKEN_REFRESHED' && session?.user) {
-          // Revalidar perfil quando o token é renovado
           const perfil = await fetchPerfil(session.user.id);
           if (perfil && perfil.status !== 'aprovado') {
-            skipNextAuthEvent.current = true;
+            skipNextEvent.current = true;
             await supabase.auth.signOut();
-            if (mounted) {
-              setUser(null);
-              setIsMaster(false);
-              setLoading(false);
-            }
+            if (mounted) { setUser(null); setIsMaster(false); }
           } else if (mounted) {
             setUser({
               id: session.user.id,
@@ -139,17 +120,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           return;
         }
 
-        // Para SIGNED_IN vindo de outra aba ou refresh externo
+        // SIGNED_IN vindo de outra aba / OAuth (NÃO do login manual)
         if (event === 'SIGNED_IN' && session?.user) {
           const perfil = await fetchPerfil(session.user.id);
           if (perfil && perfil.status !== 'aprovado') {
-            skipNextAuthEvent.current = true;
+            skipNextEvent.current = true;
             await supabase.auth.signOut();
-            if (mounted) {
-              setUser(null);
-              setIsMaster(false);
-              setLoading(false);
-            }
+            if (mounted) { setUser(null); setIsMaster(false); }
           } else if (mounted) {
             setUser({
               id: session.user.id,
@@ -160,7 +137,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               perfil?.role === 'master' ||
               session.user.user_metadata?.role === 'master'
             );
-            setLoading(false);
           }
         }
       }
@@ -168,66 +144,66 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     return () => {
       mounted = false;
-      authListener.subscription.unsubscribe();
+      listener.subscription.unsubscribe();
     };
   }, []);
 
-  const signIn = async (email: string, password: string) => {
-    setLoading(true);
+  // ─── signIn: gerencia o fluxo completo de login manual ──────────────────
+  // NÃO toca em loading (gerenciado pelo formulário).
+  // Define skipNextEvent ANTES do signInWithPassword para o evento SIGNED_IN
+  // não ser processado duas vezes pelo listener acima.
+  const signIn = async (email: string, password: string): Promise<{ error: any }> => {
+    // Marcar ANTES para o listener ignorar o SIGNED_IN que vai disparar
+    skipNextEvent.current = true;
+
     try {
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
+      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
 
       if (error) {
-        setLoading(false);
+        skipNextEvent.current = false; // Nenhum evento vai disparar com erro
         return { error };
       }
 
-      if (data?.user) {
-        const perfil = await fetchPerfil(data.user.id);
-
-        if (perfil && perfil.status !== 'aprovado') {
-          // Bloquear acesso — faz logout e informa
-          skipNextAuthEvent.current = true;
-          await supabase.auth.signOut();
-          setUser(null);
-          setIsMaster(false);
-          setLoading(false);
-          return { error: { message: 'Sua conta ainda não foi aprovada por um administrador.' } };
-        }
-
-        // Sucesso — atualizar contexto antes de redirecionar
-        // Marcar para o onAuthStateChange ignorar o SIGNED_IN que vai disparar
-        skipNextAuthEvent.current = true;
-        setUser({
-          id: data.user.id,
-          email: data.user.email || '',
-          role: perfil?.role || 'padrao',
-        });
-        setIsMaster(
-          perfil?.role === 'master' ||
-          data.user.user_metadata?.role === 'master'
-        );
-        setLoading(false);
-      } else {
-        setLoading(false);
+      if (!data?.user) {
+        skipNextEvent.current = false;
+        return { error: { message: 'Resposta inesperada do servidor.' } };
       }
+
+      // Verificar aprovação no banco
+      const perfil = await fetchPerfil(data.user.id);
+
+      if (perfil && perfil.status !== 'aprovado') {
+        // Usuário não aprovado — derrubar sessão
+        skipNextEvent.current = true; // Pular o SIGNED_OUT que vai disparar
+        await supabase.auth.signOut();
+        setUser(null);
+        setIsMaster(false);
+        return { error: { message: 'Sua conta ainda não foi aprovada por um administrador.' } };
+      }
+
+      // ✅ Sucesso — atualizar contexto
+      setUser({
+        id: data.user.id,
+        email: data.user.email || '',
+        role: perfil?.role || 'padrao',
+      });
+      setIsMaster(
+        perfil?.role === 'master' ||
+        data.user.user_metadata?.role === 'master'
+      );
 
       return { error: null };
     } catch (err: any) {
-      setLoading(false);
-      return { error: { message: err.message || 'Erro ao fazer login.' } };
+      skipNextEvent.current = false;
+      return { error: { message: err.message || 'Erro inesperado ao fazer login.' } };
     }
   };
 
   const signOut = async () => {
-    skipNextAuthEvent.current = true;
+    skipNextEvent.current = true;
     await supabase.auth.signOut();
     setUser(null);
     setIsMaster(false);
-    setLoading(false);
   };
 
   return (

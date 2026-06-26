@@ -64,10 +64,10 @@ const LoginForm = () => {
           setError(signInError.message);
           setLoading(false);
         } else {
-          // Login bem-sucedido: o signIn() já verificou o perfil e atualizou o contexto.
-          // Redirecionar para o dashboard.
+          // Login bem-sucedido — resetar loading ANTES de navegar
+          // para não ficar preso em "Aguarde..." se a navegação demorar
+          setLoading(false);
           router.push('/admin/dashboard');
-          // Não chamamos setLoading(false) pois a navegação vai ocorrer
         }
       }
     } catch (err) {
