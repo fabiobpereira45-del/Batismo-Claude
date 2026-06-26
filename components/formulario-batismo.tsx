@@ -101,6 +101,15 @@ function parseDateBRToISO(dateBR: string): string {
   return dateBR;
 }
 
+function formatDateISOToBR(dateISO: string | null | undefined): string {
+  if (!dateISO) return "";
+  const parts = dateISO.split("-");
+  if (parts.length === 3) {
+    return `${parts[2]}/${parts[1]}/${parts[0]}`;
+  }
+  return dateISO;
+}
+
 function validateCPF(cpf: string): boolean {
   const digits = cpf.replace(/\D/g, "");
   if (digits.length !== 11) return false;
@@ -150,6 +159,13 @@ export default function FormularioBatismo() {
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [errors, setErrors] = useState<FormErrors>({});
+  
+  const [modoBusca, setModoBusca] = useState(false);
+  const [modoEdicao, setModoEdicao] = useState(false);
+  const [editId, setEditId] = useState<string | null>(null);
+  const [cpfBusca, setCpfBusca] = useState("");
+  const [errorBusca, setErrorBusca] = useState<string | null>(null);
+  const [submittedMode, setSubmittedMode] = useState<"cadastro" | "edicao">("cadastro");
   
   const [formData, setFormData] = useState<FormData>({
     nome: "",
@@ -398,6 +414,113 @@ export default function FormularioBatismo() {
     }
   };
 
+  const resetForm = () => {
+    setFormData({
+      nome: "",
+      cpf: "",
+      data_nascimento: "",
+      data_consagracao: "",
+      telefone: "",
+      igreja: "",
+      pastor: "",
+      cargo: "",
+      funcao: "",
+      cep: "",
+      rua: "",
+      numero: "",
+      bairro: "",
+      cidade: "",
+      estado: "",
+      estado_civil: "",
+      nome_pai: "",
+      nome_mae: "",
+      naturalidade: "",
+      rg: "",
+      data_batismo: "",
+      foto_url: "",
+    });
+    setFotoFile(null);
+    setFotoPreview(null);
+    setErrors({});
+    setError(null);
+    setEditId(null);
+    setModoEdicao(false);
+    setModoBusca(false);
+    setCpfBusca("");
+    setErrorBusca(null);
+  };
+
+  const handleBuscarCadastro = async () => {
+    setErrorBusca(null);
+    const cpfLimpo = cpfBusca.replace(/\D/g, "");
+    if (!cpfLimpo) {
+      setErrorBusca("CPF é obrigatório");
+      return;
+    }
+    if (!validateCPF(cpfBusca)) {
+      setErrorBusca("CPF inválido");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const { data, error: fetchError } = await supabase
+        .from("inscricoes_batismo")
+        .select("*")
+        .eq("cpf", cpfLimpo)
+        .maybeSingle();
+
+      if (fetchError) {
+        throw new Error(fetchError.message);
+      }
+
+      if (!data) {
+        setErrorBusca("CPF inválido ou não há cadastro");
+        return;
+      }
+
+      setFormData({
+        nome: data.nome || "",
+        cpf: formatCPF(data.cpf || ""),
+        data_nascimento: formatDateISOToBR(data.data_nascimento),
+        data_consagracao: data.data_consagracao ? formatDateISOToBR(data.data_consagracao) : "",
+        telefone: formatTelefone(data.telefone || ""),
+        igreja: data.igreja || "",
+        pastor: data.pastor || "",
+        cargo: data.cargo || "",
+        funcao: data.funcao || "",
+        cep: formatCEP(data.cep || ""),
+        rua: data.rua || "",
+        numero: data.numero || "",
+        bairro: data.bairro || "",
+        cidade: data.cidade || "",
+        estado: data.estado || "",
+        estado_civil: data.estado_civil || "",
+        nome_pai: data.nome_pai || "",
+        nome_mae: data.nome_mae || "",
+        naturalidade: data.naturalidade || "",
+        rg: data.rg || "",
+        data_batismo: data.data_batismo ? formatDateISOToBR(data.data_batismo) : "",
+        foto_url: data.foto_url || "",
+      });
+
+      if (data.foto_url) {
+        setFotoPreview(data.foto_url);
+      } else {
+        setFotoPreview(null);
+      }
+      setFotoFile(null);
+
+      setEditId(data.id);
+      setModoEdicao(true);
+      setModoBusca(false);
+    } catch (err: any) {
+      setErrorBusca("Erro ao buscar cadastro. Tente novamente.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
@@ -407,9 +530,10 @@ export default function FormularioBatismo() {
     }
     
     setLoading(true);
+    setSubmittedMode(modoEdicao ? "edicao" : "cadastro");
     
     try {
-      let uploadedFotoUrl = "";
+      let uploadedFotoUrl = formData.foto_url || "";
       if (fotoFile) {
         const cpfLimpo = formData.cpf.replace(/\D/g, "");
         const fileExt = "jpg"; // Salvar sempre em JPEG comprimido do canvas
@@ -435,18 +559,16 @@ export default function FormularioBatismo() {
         uploadedFotoUrl = publicUrl;
       }
 
-      const { error: supabaseError } = await supabase
-        .from("inscricoes_batismo")
-        .insert([
-          {
+      if (modoEdicao) {
+        const { error: supabaseError } = await supabase
+          .from("inscricoes_batismo")
+          .update({
             nome: formData.nome.trim(),
-            cpf: formData.cpf.replace(/\D/g, ""),
             data_nascimento: parseDateBRToISO(formData.data_nascimento),
             data_consagracao: formData.data_consagracao ? parseDateBRToISO(formData.data_consagracao) : null,
             telefone: formData.telefone,
             igreja: formData.igreja.trim(),
             pastor: formData.pastor.trim(),
-
             cargo: formData.cargo,
             funcao: formData.funcao,
             cep: formData.cep.replace(/\D/g, ""),
@@ -456,54 +578,59 @@ export default function FormularioBatismo() {
             cidade: formData.cidade.trim(),
             estado: formData.estado.trim(),
             estado_civil: formData.estado_civil,
-
             nome_pai: formData.nome_pai?.trim() || null,
             nome_mae: formData.nome_mae.trim(),
             naturalidade: formData.naturalidade,
             rg: formData.rg.trim(),
             data_batismo: parseDateBRToISO(formData.data_batismo),
             foto_url: uploadedFotoUrl || null,
-          },
-        ]);
-      
-      if (supabaseError) {
-        if (supabaseError.message.includes("duplicate key")) {
-          setError("Este CPF já está cadastrado.");
-        } else {
-          setError("Erro ao salvar inscrição. Tente novamente.");
+          })
+          .eq("id", editId);
+
+        if (supabaseError) {
+          throw supabaseError;
         }
-        return;
+      } else {
+        const { error: supabaseError } = await supabase
+          .from("inscricoes_batismo")
+          .insert([
+            {
+              nome: formData.nome.trim(),
+              cpf: formData.cpf.replace(/\D/g, ""),
+              data_nascimento: parseDateBRToISO(formData.data_nascimento),
+              data_consagracao: formData.data_consagracao ? parseDateBRToISO(formData.data_consagracao) : null,
+              telefone: formData.telefone,
+              igreja: formData.igreja.trim(),
+              pastor: formData.pastor.trim(),
+              cargo: formData.cargo,
+              funcao: formData.funcao,
+              cep: formData.cep.replace(/\D/g, ""),
+              rua: formData.rua.trim(),
+              numero: formData.numero.trim(),
+              bairro: formData.bairro.trim(),
+              cidade: formData.cidade.trim(),
+              estado: formData.estado.trim(),
+              estado_civil: formData.estado_civil,
+              nome_pai: formData.nome_pai?.trim() || null,
+              nome_mae: formData.nome_mae.trim(),
+              naturalidade: formData.naturalidade,
+              rg: formData.rg.trim(),
+              data_batismo: parseDateBRToISO(formData.data_batismo),
+              foto_url: uploadedFotoUrl || null,
+            },
+          ]);
+        
+        if (supabaseError) {
+          if (supabaseError.message.includes("duplicate key")) {
+            setError("Este CPF já está cadastrado.");
+          } else {
+            setError("Erro ao salvar inscrição. Tente novamente.");
+          }
+          return;
+        }
       }
       
       setSuccess(true);
-      setFotoFile(null);
-      setFotoPreview(null);
-      setFormData({
-        nome: "",
-        cpf: "",
-        data_nascimento: "",
-        data_consagracao: "",
-        telefone: "",
-        igreja: "",
-        pastor: "",
-
-        cargo: "",
-        funcao: "",
-        cep: "",
-        rua: "",
-        numero: "",
-        bairro: "",
-        cidade: "",
-        estado: "",
-        estado_civil: "",
-
-        nome_pai: "",
-        nome_mae: "",
-        naturalidade: "",
-        rg: "",
-        data_batismo: "",
-        foto_url: "",
-      });
     } catch (err: any) {
       setError(err.message || "Erro ao conectar com o banco de dados.");
     } finally {
@@ -513,18 +640,20 @@ export default function FormularioBatismo() {
 
   if (success) {
     return (
-      <Card>
-        <CardContent className="pt-6">
+      <Card className="border-0 shadow-2xl shadow-indigo-200/50 bg-white/80 backdrop-blur-xl rounded-3xl overflow-hidden">
+        <CardContent className="p-5 sm:p-10">
           <div className="text-center py-8">
             <div className="text-5xl mb-4">🎉</div>
             <h2 className="text-2xl font-semibold text-green-600 mb-2">
-              Inscrição Realizada!
+              {submittedMode === "edicao" ? "Inscrição Atualizada!" : "Inscrição Realizada!"}
             </h2>
             <p className="text-gray-600 mb-6">
-              Seus dados foram enviados com sucesso. Em breve entraremos em contato.
+              {submittedMode === "edicao"
+                ? "Seus dados foram atualizados com sucesso."
+                : "Seus dados foram enviados com sucesso. Em breve entraremos em contato."}
             </p>
-            <Button onClick={() => setSuccess(false)} variant="outline">
-              Fazer Nova Inscrição
+            <Button onClick={() => { setSuccess(false); resetForm(); }} variant="outline" className="rounded-xl px-6">
+              Voltar ao Início
             </Button>
           </div>
         </CardContent>
@@ -537,13 +666,100 @@ export default function FormularioBatismo() {
 
   return (
     <Card className="border-0 shadow-2xl shadow-indigo-200/50 bg-white/80 backdrop-blur-xl rounded-3xl overflow-hidden">
+      {/* Alternância de Modo */}
+      {!modoEdicao && (
+        <div className="flex border-b border-slate-100 bg-slate-50/50 p-1.5 gap-2">
+          <button
+            type="button"
+            onClick={() => { setModoBusca(false); resetForm(); }}
+            className={`flex-1 py-2.5 text-sm font-semibold rounded-2xl transition-all ${
+              !modoBusca
+                ? "bg-white text-indigo-600 shadow-sm border border-slate-100"
+                : "text-slate-500 hover:text-slate-800 hover:bg-slate-100/50"
+            }`}
+          >
+            Novo Cadastro
+          </button>
+          <button
+            type="button"
+            onClick={() => { setModoBusca(true); setErrorBusca(null); setCpfBusca(""); }}
+            className={`flex-1 py-2.5 text-sm font-semibold rounded-2xl transition-all ${
+              modoBusca
+                ? "bg-white text-indigo-600 shadow-sm border border-slate-100"
+                : "text-slate-500 hover:text-slate-800 hover:bg-slate-100/50"
+            }`}
+          >
+            Editar Cadastro
+          </button>
+        </div>
+      )}
+
       <CardContent className="p-5 sm:p-10">
-        <form onSubmit={handleSubmit} className="space-y-6">
-          {error && (
-            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md text-sm">
-              {error}
+        {modoBusca ? (
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              handleBuscarCadastro();
+            }}
+            className="space-y-6"
+          >
+            <div className="text-center py-2">
+              <h3 className="text-xl font-bold text-slate-800">Buscar Cadastro</h3>
+              <p className="text-sm text-slate-500 mt-1">
+                Informe seu CPF para consultar e atualizar seu cadastro ou enviar sua foto.
+              </p>
             </div>
-          )}
+
+            {errorBusca && (
+              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl text-sm font-medium">
+                {errorBusca}
+              </div>
+            )}
+
+            <div className="space-y-2">
+              <label htmlFor="cpfBusca" className="text-sm font-medium text-gray-700">
+                Digite seu CPF *
+              </label>
+              <Input
+                id="cpfBusca"
+                name="cpfBusca"
+                value={cpfBusca}
+                onChange={(e) => setCpfBusca(formatCPF(e.target.value))}
+                placeholder="000.000.000-00"
+                maxLength={14}
+                className="h-12 text-lg text-center font-medium tracking-wide rounded-xl"
+                required
+              />
+            </div>
+
+            <Button
+              type="submit"
+              className="w-full h-12 text-lg font-semibold bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-700 hover:to-blue-700 shadow-md hover:shadow-lg transition-all rounded-xl"
+              disabled={loading}
+            >
+              {loading ? "Buscando..." : "Buscar Cadastro"}
+            </Button>
+          </form>
+        ) : (
+          <form onSubmit={handleSubmit} className="space-y-6">
+            {error && (
+              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md text-sm">
+                {error}
+              </div>
+            )}
+
+            {modoEdicao && (
+              <div className="bg-blue-50 border border-blue-100 text-blue-800 px-4 py-3 rounded-2xl flex flex-col sm:flex-row items-center justify-between gap-3 text-sm shadow-sm mb-4">
+                <div className="flex items-center gap-2">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-blue-500"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4z"/></svg>
+                  <span>Você está editando o cadastro de <strong>{formData.nome}</strong>.</span>
+                </div>
+                <Button type="button" onClick={resetForm} variant="ghost" className="text-blue-600 hover:text-blue-700 hover:bg-blue-100/50 text-xs px-3 h-8 rounded-lg font-semibold">
+                  Cancelar Edição
+                </Button>
+              </div>
+            )}
+
           
           {/* Sessão de Foto do Membro */}
           <div className="space-y-3 pt-2">
@@ -673,6 +889,7 @@ export default function FormularioBatismo() {
                     placeholder="000.000.000-00"
                     maxLength={14}
                     required
+                    disabled={modoEdicao}
                   />
                   {errors.cpf && (
                     <p className="text-sm text-red-600">{errors.cpf}</p>
@@ -972,9 +1189,10 @@ export default function FormularioBatismo() {
           </div>
 
           <Button type="submit" className="w-full mt-8 h-12 text-lg font-semibold bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-700 hover:to-blue-700 shadow-md hover:shadow-lg transition-all rounded-xl" disabled={loading}>
-            {loading ? "Enviando..." : "Finalizar Inscrição"}
+            {loading ? "Enviando..." : (modoEdicao ? "Salvar Alterações" : "Finalizar Inscrição")}
           </Button>
         </form>
+      )}
       </CardContent>
     </Card>
   );
