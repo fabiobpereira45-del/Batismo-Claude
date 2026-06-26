@@ -539,7 +539,6 @@ export default function InscricoesPage() {
               >
                 Baixar PDF
               </Button>
-            <div className="flex justify-end gap-3 border-t pt-4">
               <Button variant="outline" onClick={() => setViewModalData(null)}>
                 Fechar
               </Button>
