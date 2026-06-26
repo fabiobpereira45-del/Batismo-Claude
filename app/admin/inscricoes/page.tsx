@@ -110,10 +110,10 @@ export default function InscricoesPage() {
 
       if (filtroNome)   query = query.ilike('nome', `%${filtroNome}%`);
       if (filtroCpf)    query = query.ilike('cpf', `%${filtroCpf}%`);
-      if (filtroIgreja) query = query.eq('igreja', filtroIgreja);
-      if (filtroPastor) query = query.eq('pastor', filtroPastor);
-      if (filtroCargo)  query = query.eq('cargo', filtroCargo);
-      if (filtroFuncao) query = query.eq('funcao', filtroFuncao);
+      if (filtroIgreja) query = query.ilike('igreja', filtroIgreja);
+      if (filtroPastor) query = query.ilike('pastor', filtroPastor);
+      if (filtroCargo)  query = query.ilike('cargo', filtroCargo);
+      if (filtroFuncao) query = query.ilike('funcao', filtroFuncao);
 
       const { data, error } = await query;
       if (error) throw error;
@@ -157,10 +157,11 @@ export default function InscricoesPage() {
         .select('funcao')
         .order('funcao');
 
-      setIgrejas(Array.from(new Set(igrejasData?.map(i => i.igreja) || [])));
-      setPastores(Array.from(new Set(pastoresData?.map(p => p.pastor) || [])));
-      setCargos(Array.from(new Set(cargosData?.map(c => c.cargo).filter(Boolean) || [])));
-      setFuncoes(Array.from(new Set(funcoesData?.map(f => f.funcao).filter(Boolean) || [])));
+      // Normalizar em maiúsculo e remover duplicadas
+      setIgrejas(Array.from(new Set(igrejasData?.map(i => i.igreja?.trim().toUpperCase()).filter(Boolean) || [])));
+      setPastores(Array.from(new Set(pastoresData?.map(p => p.pastor?.trim().toUpperCase()).filter(Boolean) || [])));
+      setCargos(Array.from(new Set(cargosData?.map(c => c.cargo?.trim().toUpperCase()).filter(Boolean) || [])));
+      setFuncoes(Array.from(new Set(funcoesData?.map(f => f.funcao?.trim().toUpperCase()).filter(Boolean) || [])));
     } catch (err) {
       console.error('Erro ao buscar opções:', err);
     }

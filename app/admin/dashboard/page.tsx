@@ -90,10 +90,10 @@ export default function AdminDashboard() {
         query = query.ilike('nome', `%${filtroNome}%`);
       }
       if (filtroIgreja) {
-        query = query.eq('igreja', filtroIgreja);
+        query = query.ilike('igreja', `%${filtroIgreja}%`);
       }
       if (filtroPastor) {
-        query = query.eq('pastor', filtroPastor);
+        query = query.ilike('pastor', `%${filtroPastor}%`);
       }
 
       const { data, error } = await query;
