@@ -1,0 +1,37 @@
+﻿
+> inscricao-batismo@0.1.0 build
+> next build
+
+  Ôû▓ Next.js 14.2.8
+  - Environments: .env.local
+
+   Creating an optimized production build ...
+ Ô£ô Compiled successfully
+   Linting and checking validity of types ...
+   Collecting page data ...
+   Generating static pages (0/7) ...
+   Generating static pages (1/7) 
+   Generating static pages (3/7) 
+   Generating static pages (5/7) 
+ Ô£ô Generating static pages (7/7)
+   Finalizing page optimization ...
+   Collecting build traces ...
+
+Route (app)                              Size     First Load JS
+Ôöî Ôùï /                                    3.16 kB         158 kB
+Ôö£ Ôùï /_not-found                          871 B          88.1 kB
+Ôö£ Ôùï /admin/dashboard                     2.19 kB         164 kB
+Ôö£ Ôùï /admin/inscricoes                    141 kB          303 kB
+Ôö£ ãÆ /admin/inscricoes/[id]/edit          2.29 kB         157 kB
+Ôöö Ôùï /admin/login                         1.94 kB         157 kB
++ First Load JS shared by all            87.3 kB
+  Ôö£ chunks/23-31bc14455789bfaf.js        31.6 kB
+  Ôö£ chunks/fd9d1056-761c05443648e2ad.js  53.6 kB
+  Ôöö other shared chunks (total)          2.08 kB
+
+
+ãÆ Middleware                             26.7 kB
+
+Ôùï  (Static)   prerendered as static content
+ãÆ  (Dynamic)  server-rendered on demand
+
