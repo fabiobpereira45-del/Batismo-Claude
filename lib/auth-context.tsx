@@ -20,17 +20,32 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 async function fetchPerfil(userId: string) {
-  const { data, error } = await supabase
-    .from('perfil_usuarios')
-    .select('role, status')
-    .eq('id', userId)
-    .single();
-  if (error) {
-    // PGRST116 = nenhuma linha encontrada — não é erro crítico
-    console.warn('fetchPerfil:', error.message);
+  try {
+    // Timeout de 8 segundos para evitar travamento se a rede/banco falhar
+    const fetchPromise = supabase
+      .from('perfil_usuarios')
+      .select('role, status')
+      .eq('id', userId)
+      .single();
+
+    const timeoutPromise = new Promise<{ data: null; error: any }>((_, reject) =>
+      setTimeout(() => reject(new Error('Timeout ao buscar perfil')), 8000)
+    );
+
+    const { data, error } = await Promise.race([
+      fetchPromise,
+      timeoutPromise
+    ]);
+
+    if (error) {
+      console.warn('fetchPerfil:', error.message);
+      return null;
+    }
+    return data;
+  } catch (err: any) {
+    console.error('fetchPerfil error or timeout:', err.message || err);
     return null;
   }
-  return data;
 }
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
@@ -42,8 +57,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // Usado para evitar double-processing quando o próprio código dispara signIn/signOut.
   const skipNextEvent = useRef(false);
 
+  // Evita concorrência e race condition entre initAuth e os primeiros eventos do listener
+  const isInitializing = useRef(true);
+
   useEffect(() => {
     let mounted = true;
+
+    // Timeout de segurança global: desativa a tela de "Verificando autenticação..."
+    // após 10 segundos, no pior cenário, para não deixar o usuário preso.
+    const globalTimeout = setTimeout(() => {
+      if (mounted && isInitializing.current) {
+        console.warn('Timeout de segurança do AuthProvider disparado.');
+        isInitializing.current = false;
+        setLoading(false);
+      }
+    }, 10000);
 
     // ─── Inicialização: verifica sessão existente ───────────────────────────
     const initAuth = async () => {
@@ -77,7 +105,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         console.error('initAuth error:', e);
         if (mounted) { setUser(null); setIsMaster(false); }
       } finally {
-        // loading só existe durante a verificação inicial — depois é sempre false
+        isInitializing.current = false;
         if (mounted) setLoading(false);
       }
     };
@@ -89,6 +117,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // NÃO é usado para o fluxo de login manual (gerenciado pelo signIn())
     const { data: listener } = supabase.auth.onAuthStateChange(
       async (event, session) => {
+        // Se ainda estiver no processo de inicialização, ignoramos eventos
+        // porque initAuth() está cuidando do estado inicial.
+        if (isInitializing.current) {
+          if (event === 'SIGNED_OUT') {
+            if (mounted) { setUser(null); setIsMaster(false); }
+          }
+          return;
+        }
+
         // Pular evento que foi disparado pelo próprio código desta app
         if (skipNextEvent.current) {
           skipNextEvent.current = false;
@@ -144,6 +181,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     return () => {
       mounted = false;
+      clearTimeout(globalTimeout);
       listener.subscription.unsubscribe();
     };
   }, []);
