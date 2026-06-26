@@ -52,41 +52,28 @@ export default function InscricoesPage() {
   const [filtroCargo, setFiltroCargo] = useState('');
   const [filtroFuncao, setFiltroFuncao] = useState('');
 
-  // Exportar PDF Modal
-  const [exportModalOpen, setExportModalOpen] = useState(false);
-  const [exportFilters, setExportFilters] = useState({
-    nome: true,
-    cpf: true,
-    igreja: true,
-    pastor: true,
-    cargo: true,
-    funcao: true,
-  });
+  // Estados dos filtros em caixa de seleção (Checkboxes)
+  const [selectedCargos, setSelectedCargos] = useState<string[]>([]);
   const [exportColumns, setExportColumns] = useState({
     nome: true,
-    cpf: true,
-    idade: true,
-    telefone: true,
+    cpf: false,
+    idade: false,
+    telefone: false,
     cargoFuncao: true,
-    estadoCivil: true,
-    endereco: true,
+    estadoCivil: false,
+    endereco: false,
     igrejaPastor: true,
   });
 
-  const openExportModal = () => {
-    setExportModalOpen(true);
-  };
-
   const handleExportPDF = () => {
     generatePDF(inscricoes, {
-      nome: exportFilters.nome && filtroNome ? filtroNome : undefined,
-      cpf: exportFilters.cpf && filtroCpf ? filtroCpf : undefined,
-      igreja: exportFilters.igreja && filtroIgreja ? filtroIgreja : undefined,
-      pastor: exportFilters.pastor && filtroPastor ? filtroPastor : undefined,
-      cargo: exportFilters.cargo && filtroCargo ? filtroCargo : undefined,
-      funcao: exportFilters.funcao && filtroFuncao ? filtroFuncao : undefined,
+      nome: filtroNome || undefined,
+      cpf: filtroCpf || undefined,
+      igreja: filtroIgreja || undefined,
+      pastor: filtroPastor || undefined,
+      cargo: selectedCargos.length > 0 ? selectedCargos.join(', ') : (filtroCargo || undefined),
+      funcao: filtroFuncao || undefined,
     }, exportColumns);
-    setExportModalOpen(false);
   };
 
   
@@ -115,6 +102,11 @@ export default function InscricoesPage() {
       if (filtroCargo)  query = query.ilike('cargo', filtroCargo);
       if (filtroFuncao) query = query.ilike('funcao', filtroFuncao);
 
+      // Aplicar filtro de múltiplos cargos se selecionados nas checkboxes
+      if (selectedCargos.length > 0) {
+        query = query.in('cargo', selectedCargos);
+      }
+
       const { data, error } = await query;
       if (error) throw error;
       setInscricoes(data || []);
@@ -123,7 +115,7 @@ export default function InscricoesPage() {
     } finally {
       setLoading(false);
     }
-  }, [user, filtroNome, filtroCpf, filtroIgreja, filtroPastor, filtroCargo, filtroFuncao]);
+  }, [user, filtroNome, filtroCpf, filtroIgreja, filtroPastor, filtroCargo, filtroFuncao, selectedCargos]);
 
   // Buscar opções dos dropdowns apenas uma vez ao autenticar
   useEffect(() => {
@@ -204,6 +196,7 @@ export default function InscricoesPage() {
     setFiltroPastor('');
     setFiltroCargo('');
     setFiltroFuncao('');
+    setSelectedCargos([]);
   };
 
   // Mostrar loading apenas enquanto a auth ainda não foi resolvida
@@ -231,8 +224,8 @@ export default function InscricoesPage() {
           <h1 className="text-3xl font-bold text-gray-900">Inscrições</h1>
           <div className="flex gap-2">
             <Button
-              onClick={openExportModal}
-              variant="outline"
+              onClick={handleExportPDF}
+              className="bg-blue-600 hover:bg-blue-700 text-white font-medium shadow"
             >
               Exportar PDF
             </Button>
@@ -341,9 +334,65 @@ export default function InscricoesPage() {
             </div>
 
           </div>
-          <div className="flex gap-2">
-            <Button onClick={fetchInscricoes}>Aplicar Filtros</Button>
-            <Button variant="outline" onClick={limparFiltros}>Limpar Filtros</Button>
+          
+          <div className="flex flex-wrap items-center gap-x-6 gap-y-4 border-t pt-4 mt-2">
+            <div className="flex gap-2">
+              <Button onClick={fetchInscricoes}>Aplicar Filtros</Button>
+              <Button variant="outline" onClick={limparFiltros}>Limpar Filtros</Button>
+            </div>
+
+            {/* Divisor vertical */}
+            <div className="hidden md:block h-6 w-px bg-gray-200" />
+
+            {/* Checkboxes de colunas do PDF */}
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+              <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">Colunas PDF:</span>
+              <label className="flex items-center gap-1.5 cursor-pointer text-sm font-medium text-gray-700">
+                <input type="checkbox" checked={exportColumns.cpf} onChange={(e) => setExportColumns({...exportColumns, cpf: e.target.checked})} className="rounded text-blue-600 focus:ring-blue-500" />
+                <span>CPF</span>
+              </label>
+              <label className="flex items-center gap-1.5 cursor-pointer text-sm font-medium text-gray-700">
+                <input type="checkbox" checked={exportColumns.igrejaPastor} onChange={(e) => setExportColumns({...exportColumns, igrejaPastor: e.target.checked})} className="rounded text-blue-600 focus:ring-blue-500" />
+                <span>Igreja/Pastor</span>
+              </label>
+              <label className="flex items-center gap-1.5 cursor-pointer text-sm font-medium text-gray-700">
+                <input type="checkbox" checked={exportColumns.idade} onChange={(e) => setExportColumns({...exportColumns, idade: e.target.checked})} className="rounded text-blue-600 focus:ring-blue-500" />
+                <span>Idade</span>
+              </label>
+              <label className="flex items-center gap-1.5 cursor-pointer text-sm font-medium text-gray-700">
+                <input type="checkbox" checked={exportColumns.telefone} onChange={(e) => setExportColumns({...exportColumns, telefone: e.target.checked})} className="rounded text-blue-600 focus:ring-blue-500" />
+                <span>Tel</span>
+              </label>
+              <label className="flex items-center gap-1.5 cursor-pointer text-sm font-medium text-gray-700">
+                <input type="checkbox" checked={exportColumns.cargoFuncao} onChange={(e) => setExportColumns({...exportColumns, cargoFuncao: e.target.checked})} className="rounded text-blue-600 focus:ring-blue-500" />
+                <span>Cargo/Função</span>
+              </label>
+            </div>
+
+            {/* Divisor vertical */}
+            <div className="hidden lg:block h-6 w-px bg-gray-200" />
+
+            {/* Checkboxes de Cargos */}
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+              <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">Filtrar Cargos:</span>
+              {['MEMBRO', 'AUXILIAR', 'DIÁCONO', 'PRESBÍTERO', 'EVANGELISTA', 'PASTOR'].map((cargo) => (
+                <label key={cargo} className="flex items-center gap-1.5 cursor-pointer text-sm font-medium text-gray-700">
+                  <input
+                    type="checkbox"
+                    checked={selectedCargos.includes(cargo)}
+                    onChange={(e) => {
+                      if (e.target.checked) {
+                        setSelectedCargos([...selectedCargos, cargo]);
+                      } else {
+                        setSelectedCargos(selectedCargos.filter((c) => c !== cargo));
+                      }
+                    }}
+                    className="rounded text-blue-600 focus:ring-blue-500"
+                  />
+                  <span>{cargo}</span>
+                </label>
+              ))}
+            </div>
           </div>
         </div>
 
@@ -490,117 +539,9 @@ export default function InscricoesPage() {
               >
                 Baixar PDF
               </Button>
+            <div className="flex justify-end gap-3 border-t pt-4">
               <Button variant="outline" onClick={() => setViewModalData(null)}>
                 Fechar
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
-      {/* Modal de Exportação PDF */}
-      {exportModalOpen && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-xl shadow-xl max-w-md w-full p-6 relative max-h-[90vh] overflow-y-auto">
-            <button
-              onClick={() => setExportModalOpen(false)}
-              className="absolute top-4 right-4 text-gray-500 hover:text-gray-700"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-            </button>
-            <h2 className="text-xl font-bold text-gray-900 mb-4 border-b pb-2">Exportar PDF</h2>
-            
-            <div className="mb-6">
-              <h3 className="text-sm font-semibold text-gray-900 mb-2">Colunas para Imprimir</h3>
-              <p className="text-xs text-gray-500 mb-3">Selecione quais dados devem aparecer na tabela do PDF:</p>
-              <div className="grid grid-cols-2 gap-2">
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input type="checkbox" checked={exportColumns.nome} onChange={(e) => setExportColumns({...exportColumns, nome: e.target.checked})} className="rounded text-blue-600" />
-                  <span className="text-sm text-gray-700">Nome</span>
-                </label>
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input type="checkbox" checked={exportColumns.cpf} onChange={(e) => setExportColumns({...exportColumns, cpf: e.target.checked})} className="rounded text-blue-600" />
-                  <span className="text-sm text-gray-700">CPF</span>
-                </label>
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input type="checkbox" checked={exportColumns.idade} onChange={(e) => setExportColumns({...exportColumns, idade: e.target.checked})} className="rounded text-blue-600" />
-                  <span className="text-sm text-gray-700">Idade</span>
-                </label>
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input type="checkbox" checked={exportColumns.telefone} onChange={(e) => setExportColumns({...exportColumns, telefone: e.target.checked})} className="rounded text-blue-600" />
-                  <span className="text-sm text-gray-700">Telefone</span>
-                </label>
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input type="checkbox" checked={exportColumns.cargoFuncao} onChange={(e) => setExportColumns({...exportColumns, cargoFuncao: e.target.checked})} className="rounded text-blue-600" />
-                  <span className="text-sm text-gray-700">Cargo/Função</span>
-                </label>
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input type="checkbox" checked={exportColumns.estadoCivil} onChange={(e) => setExportColumns({...exportColumns, estadoCivil: e.target.checked})} className="rounded text-blue-600" />
-                  <span className="text-sm text-gray-700">Est. Civil</span>
-                </label>
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input type="checkbox" checked={exportColumns.endereco} onChange={(e) => setExportColumns({...exportColumns, endereco: e.target.checked})} className="rounded text-blue-600" />
-                  <span className="text-sm text-gray-700">Endereço</span>
-                </label>
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input type="checkbox" checked={exportColumns.igrejaPastor} onChange={(e) => setExportColumns({...exportColumns, igrejaPastor: e.target.checked})} className="rounded text-blue-600" />
-                  <span className="text-sm text-gray-700">Igreja/Pastor</span>
-                </label>
-              </div>
-            </div>
-
-            {(filtroNome || filtroCpf || filtroIgreja || filtroPastor || filtroCargo || filtroFuncao) && (
-              <div className="mb-6">
-                <h3 className="text-sm font-semibold text-gray-900 mb-2 border-t pt-4">Filtros no Cabeçalho</h3>
-                <p className="text-xs text-gray-500 mb-3">
-                  Selecione quais filtros aplicados você deseja exibir no cabeçalho do PDF:
-                </p>
-                <div className="space-y-2">
-                  {filtroNome && (
-                    <label className="flex items-center gap-2 cursor-pointer">
-                      <input type="checkbox" checked={exportFilters.nome} onChange={(e) => setExportFilters({...exportFilters, nome: e.target.checked})} className="rounded text-blue-600" />
-                      <span className="text-sm text-gray-700">Nome: <span className="font-medium">{filtroNome}</span></span>
-                    </label>
-                  )}
-                  {filtroCpf && (
-                    <label className="flex items-center gap-2 cursor-pointer">
-                      <input type="checkbox" checked={exportFilters.cpf} onChange={(e) => setExportFilters({...exportFilters, cpf: e.target.checked})} className="rounded text-blue-600" />
-                      <span className="text-sm text-gray-700">CPF: <span className="font-medium">{filtroCpf}</span></span>
-                    </label>
-                  )}
-                  {filtroIgreja && (
-                    <label className="flex items-center gap-2 cursor-pointer">
-                      <input type="checkbox" checked={exportFilters.igreja} onChange={(e) => setExportFilters({...exportFilters, igreja: e.target.checked})} className="rounded text-blue-600" />
-                      <span className="text-sm text-gray-700">Igreja: <span className="font-medium">{filtroIgreja}</span></span>
-                    </label>
-                  )}
-                  {filtroPastor && (
-                    <label className="flex items-center gap-2 cursor-pointer">
-                      <input type="checkbox" checked={exportFilters.pastor} onChange={(e) => setExportFilters({...exportFilters, pastor: e.target.checked})} className="rounded text-blue-600" />
-                      <span className="text-sm text-gray-700">Pastor: <span className="font-medium">{filtroPastor}</span></span>
-                    </label>
-                  )}
-                  {filtroCargo && (
-                    <label className="flex items-center gap-2 cursor-pointer">
-                      <input type="checkbox" checked={exportFilters.cargo} onChange={(e) => setExportFilters({...exportFilters, cargo: e.target.checked})} className="rounded text-blue-600" />
-                      <span className="text-sm text-gray-700">Cargo: <span className="font-medium">{filtroCargo}</span></span>
-                    </label>
-                  )}
-                  {filtroFuncao && (
-                    <label className="flex items-center gap-2 cursor-pointer">
-                      <input type="checkbox" checked={exportFilters.funcao} onChange={(e) => setExportFilters({...exportFilters, funcao: e.target.checked})} className="rounded text-blue-600" />
-                      <span className="text-sm text-gray-700">Função: <span className="font-medium">{filtroFuncao}</span></span>
-                    </label>
-                  )}
-                </div>
-              </div>
-            )}
-
-            <div className="flex justify-end gap-3 border-t pt-4">
-              <Button variant="outline" onClick={() => setExportModalOpen(false)}>
-                Cancelar
-              </Button>
-              <Button onClick={handleExportPDF}>
-                Gerar PDF
               </Button>
             </div>
           </div>
