@@ -19,6 +19,14 @@ interface Inscricao {
   cidade: string;
   estado: string;
   estado_civil: string;
+
+  // Novos campos
+  nome_pai?: string;
+  nome_mae?: string;
+  naturalidade?: string;
+  rg?: string;
+  data_batismo?: string;
+  foto_url?: string;
 }
 
 export function generatePDF(inscricoes: Inscricao[], filtros?: {
@@ -170,7 +178,17 @@ export function generatePDF(inscricoes: Inscricao[], filtros?: {
   doc.save(`cadastro-membros-${new Date().toISOString().slice(0, 10)}.pdf`);
 }
 
-export function generateIndividualPDF(inscricao: Inscricao) {
+function loadImage(url: string): Promise<HTMLImageElement> {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.crossOrigin = 'Anonymous';
+    img.onload = () => resolve(img);
+    img.onerror = (e) => reject(e);
+    img.src = url;
+  });
+}
+
+export async function generateIndividualPDF(inscricao: Inscricao) {
   const doc = new jsPDF('portrait');
   
   // Cabeçalho
@@ -181,6 +199,32 @@ export function generateIndividualPDF(inscricao: Inscricao) {
   
   doc.setFontSize(14);
   doc.text('Ficha Individual de Membro/Obreiro', 105, 45, { align: 'center' });
+
+  // Moldura e foto 3x4 no canto superior direito
+  const photoX = 155;
+  const photoY = 12;
+  const photoW = 35;
+  const photoH = 42;
+
+  if (inscricao.foto_url) {
+    try {
+      const img = await loadImage(inscricao.foto_url);
+      doc.addImage(img, 'JPEG', photoX, photoY, photoW, photoH);
+      doc.setDrawColor(200, 200, 200);
+      doc.rect(photoX, photoY, photoW, photoH);
+    } catch (err) {
+      console.warn("Falha ao carregar foto para o PDF:", err);
+      doc.setDrawColor(220, 220, 220);
+      doc.rect(photoX, photoY, photoW, photoH);
+      doc.setFontSize(8);
+      doc.text('Sem Foto', photoX + photoW / 2, photoY + photoH / 2 + 2, { align: 'center' });
+    }
+  } else {
+    doc.setDrawColor(220, 220, 220);
+    doc.rect(photoX, photoY, photoW, photoH);
+    doc.setFontSize(8);
+    doc.text('Sem Foto', photoX + photoW / 2, photoY + photoH / 2 + 2, { align: 'center' });
+  }
 
   doc.setFontSize(12);
   let y = 60;
@@ -205,7 +249,10 @@ export function generateIndividualPDF(inscricao: Inscricao) {
   // Informações Pessoais
   addSection('Informações Pessoais');
   addField('Nome', inscricao.nome ? inscricao.nome.toUpperCase() : '');
+  addField('Pai', inscricao.nome_pai ? inscricao.nome_pai.toUpperCase() : '-');
+  addField('Mãe', inscricao.nome_mae ? inscricao.nome_mae.toUpperCase() : '-');
   addField('CPF', inscricao.cpf);
+  addField('RG', inscricao.rg ? inscricao.rg.toUpperCase() : '-');
   
   const hoje = new Date();
   let idadeInfo = '-';
@@ -222,6 +269,7 @@ export function generateIndividualPDF(inscricao: Inscricao) {
   }
 
   addField('Data de Nascimento', idadeInfo);
+  addField('Naturalidade', inscricao.naturalidade ? inscricao.naturalidade.toUpperCase() : '-');
   addField('Estado Civil', inscricao.estado_civil ? inscricao.estado_civil.toUpperCase() : '-');
   addField('Telefone', inscricao.telefone);
 
@@ -233,6 +281,18 @@ export function generateIndividualPDF(inscricao: Inscricao) {
   addField('Pastor', inscricao.pastor ? inscricao.pastor.toUpperCase() : '');
   addField('Cargo', inscricao.cargo ? inscricao.cargo.toUpperCase() : '');
   addField('Função', inscricao.funcao ? inscricao.funcao.toUpperCase() : '');
+  
+  if (inscricao.data_batismo) {
+    const dataBat = new Date(inscricao.data_batismo);
+    if (!isNaN(dataBat.getTime())) {
+      addField('Data de Batismo', dataBat.toLocaleDateString('pt-BR'));
+    } else {
+      addField('Data de Batismo', '-');
+    }
+  } else {
+    addField('Data de Batismo', '-');
+  }
+
   if (inscricao.data_consagracao) {
     const dataCons = new Date(inscricao.data_consagracao);
     if (!isNaN(dataCons.getTime())) {

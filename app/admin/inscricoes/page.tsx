@@ -28,6 +28,14 @@ interface Inscricao {
   cidade: string;
   estado: string;
   estado_civil: string;
+
+  // Novos campos
+  nome_pai?: string;
+  nome_mae?: string;
+  naturalidade?: string;
+  rg?: string;
+  data_batismo?: string;
+  foto_url?: string;
 }
 
 export default function InscricoesPage() {
@@ -49,7 +57,6 @@ export default function InscricoesPage() {
   const [filtroCpf, setFiltroCpf] = useState('');
   const [filtroIgreja, setFiltroIgreja] = useState('');
   const [filtroPastor, setFiltroPastor] = useState('');
-  const [filtroCargo, setFiltroCargo] = useState('');
   const [filtroFuncao, setFiltroFuncao] = useState('');
 
   // Estados dos filtros em caixa de seleção (Checkboxes)
@@ -71,7 +78,7 @@ export default function InscricoesPage() {
       cpf: filtroCpf || undefined,
       igreja: filtroIgreja || undefined,
       pastor: filtroPastor || undefined,
-      cargo: selectedCargos.length > 0 ? selectedCargos.join(', ') : (filtroCargo || undefined),
+      cargo: selectedCargos.length > 0 ? selectedCargos.join(', ') : undefined,
       funcao: filtroFuncao || undefined,
     }, exportColumns);
   };
@@ -99,12 +106,11 @@ export default function InscricoesPage() {
       if (filtroCpf)    query = query.ilike('cpf', `%${filtroCpf}%`);
       if (filtroIgreja) query = query.ilike('igreja', filtroIgreja);
       if (filtroPastor) query = query.ilike('pastor', filtroPastor);
-      if (filtroCargo)  query = query.ilike('cargo', filtroCargo);
       if (filtroFuncao) query = query.ilike('funcao', filtroFuncao);
 
       // Aplicar filtro de múltiplos cargos se selecionados nas checkboxes (case-insensitive via ilike)
       if (selectedCargos.length > 0) {
-        const orQuery = selectedCargos.map(cargo => `cargo.ilike.${cargo}`).join(',');
+        const orQuery = selectedCargos.map(cargo => `cargo.ilike.%${cargo}%`).join(',');
         query = query.or(orQuery);
       }
 
@@ -116,7 +122,7 @@ export default function InscricoesPage() {
     } finally {
       setLoading(false);
     }
-  }, [user, filtroNome, filtroCpf, filtroIgreja, filtroPastor, filtroCargo, filtroFuncao, selectedCargos]);
+  }, [user, filtroNome, filtroCpf, filtroIgreja, filtroPastor, filtroFuncao, selectedCargos]);
 
   // Buscar opções dos dropdowns apenas uma vez ao autenticar
   useEffect(() => {
@@ -195,7 +201,6 @@ export default function InscricoesPage() {
     setFiltroCpf('');
     setFiltroIgreja('');
     setFiltroPastor('');
-    setFiltroCargo('');
     setFiltroFuncao('');
     setSelectedCargos([]);
   };
@@ -219,8 +224,8 @@ export default function InscricoesPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-8">
-      <div className="max-w-7xl mx-auto">
+    <div className="min-h-screen bg-gray-50 p-4 md:p-8">
+      <div className="max-w-[96%] mx-auto">
         <div className="flex justify-between items-center mb-8">
           <h1 className="text-3xl font-bold text-gray-900">Inscrições</h1>
           <div className="flex gap-2">
@@ -305,21 +310,6 @@ export default function InscricoesPage() {
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Cargo
-              </label>
-              <select
-                value={filtroCargo}
-                onChange={(e) => setFiltroCargo(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md"
-              >
-                <option value="">Todos</option>
-                {cargos.map((cargo) => (
-                  <option key={cargo} value={cargo}>{cargo}</option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
                 Função
               </label>
               <select
@@ -333,7 +323,6 @@ export default function InscricoesPage() {
                 ))}
               </select>
             </div>
-
           </div>
           
           <div className="flex flex-wrap items-center gap-x-6 gap-y-4 border-t pt-4 mt-2">
@@ -368,6 +357,14 @@ export default function InscricoesPage() {
                 <input type="checkbox" checked={exportColumns.cargoFuncao} onChange={(e) => setExportColumns({...exportColumns, cargoFuncao: e.target.checked})} className="rounded text-blue-600 focus:ring-blue-500" />
                 <span>Cargo/Função</span>
               </label>
+              <label className="flex items-center gap-1.5 cursor-pointer text-sm font-medium text-gray-700">
+                <input type="checkbox" checked={exportColumns.estadoCivil} onChange={(e) => setExportColumns({...exportColumns, estadoCivil: e.target.checked})} className="rounded text-blue-600 focus:ring-blue-500" />
+                <span>Est. Civil</span>
+              </label>
+              <label className="flex items-center gap-1.5 cursor-pointer text-sm font-medium text-gray-700">
+                <input type="checkbox" checked={exportColumns.endereco} onChange={(e) => setExportColumns({...exportColumns, endereco: e.target.checked})} className="rounded text-blue-600 focus:ring-blue-500" />
+                <span>Endereço</span>
+              </label>
             </div>
 
             {/* Divisor vertical */}
@@ -399,27 +396,54 @@ export default function InscricoesPage() {
 
         {/* Tabela */}
         <div className="bg-white shadow rounded-lg overflow-hidden">
-          <div className="overflow-x-auto">
+          <div className="overflow-auto max-h-[65vh]">
             <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
+              <thead className="bg-gray-50 sticky top-0 z-10 shadow-[0_1px_0_0_rgba(229,231,235,1)]">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-3 py-2.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Nome
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    CPF
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Idade
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Igreja
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Pastor
-                  </th>
-
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  {exportColumns.cpf && (
+                    <th className="px-3 py-2.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      CPF
+                    </th>
+                  )}
+                  {exportColumns.idade && (
+                    <th className="px-3 py-2.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Idade
+                    </th>
+                  )}
+                  {exportColumns.telefone && (
+                    <th className="px-3 py-2.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Telefone
+                    </th>
+                  )}
+                  {exportColumns.cargoFuncao && (
+                    <th className="px-3 py-2.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Cargo/Função
+                    </th>
+                  )}
+                  {exportColumns.estadoCivil && (
+                    <th className="px-3 py-2.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Est. Civil
+                    </th>
+                  )}
+                  {exportColumns.endereco && (
+                    <th className="px-3 py-2.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Endereço
+                    </th>
+                  )}
+                  {exportColumns.igrejaPastor && (
+                    <>
+                      <th className="px-3 py-2.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Igreja
+                      </th>
+                      <th className="px-3 py-2.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Pastor
+                      </th>
+                    </>
+                  )}
+                  <th className="px-3 py-2.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Ações
                   </th>
                 </tr>
@@ -427,23 +451,50 @@ export default function InscricoesPage() {
               <tbody className="bg-white divide-y divide-gray-200">
                 {inscricoes.map((inscricao) => (
                   <tr key={inscricao.id}>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                    <td className="px-3 py-3 whitespace-nowrap text-sm font-medium text-gray-900">
                       {inscricao.nome}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {inscricao.cpf}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {calcularIdade(inscricao.data_nascimento)} anos
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {inscricao.igreja}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {inscricao.pastor}
-                    </td>
-
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                    {exportColumns.cpf && (
+                      <td className="px-3 py-3 whitespace-nowrap text-sm text-gray-500">
+                        {inscricao.cpf}
+                      </td>
+                    )}
+                    {exportColumns.idade && (
+                      <td className="px-3 py-3 whitespace-nowrap text-sm text-gray-500">
+                        {calcularIdade(inscricao.data_nascimento)} anos
+                      </td>
+                    )}
+                    {exportColumns.telefone && (
+                      <td className="px-3 py-3 whitespace-nowrap text-sm text-gray-500">
+                        {inscricao.telefone}
+                      </td>
+                    )}
+                    {exportColumns.cargoFuncao && (
+                      <td className="px-3 py-3 whitespace-nowrap text-sm text-gray-500">
+                        {[inscricao.cargo, inscricao.funcao].filter(Boolean).join(' - ') || '-'}
+                      </td>
+                    )}
+                    {exportColumns.estadoCivil && (
+                      <td className="px-3 py-3 whitespace-nowrap text-sm text-gray-500">
+                        {inscricao.estado_civil || '-'}
+                      </td>
+                    )}
+                    {exportColumns.endereco && (
+                      <td className="px-3 py-3 whitespace-nowrap text-sm text-gray-500">
+                        {inscricao.cidade ? `${inscricao.cidade}/${inscricao.estado}` : '-'}
+                      </td>
+                    )}
+                    {exportColumns.igrejaPastor && (
+                      <>
+                        <td className="px-3 py-3 whitespace-nowrap text-sm text-gray-500">
+                          {inscricao.igreja}
+                        </td>
+                        <td className="px-3 py-3 whitespace-nowrap text-sm text-gray-500">
+                          {inscricao.pastor}
+                        </td>
+                      </>
+                    )}
+                    <td className="px-3 py-3 whitespace-nowrap text-sm font-medium">
                       <div className="flex flex-wrap items-center gap-2">
                         <Button
                           size="sm"
@@ -497,36 +548,56 @@ export default function InscricoesPage() {
             </button>
             <h2 className="text-2xl font-bold text-gray-900 mb-6 border-b pb-2">Detalhes da Inscrição</h2>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <h3 className="text-sm font-semibold text-gray-500 uppercase">Informações Pessoais</h3>
-                <div className="mt-2 space-y-2">
-                  <p><span className="font-medium text-gray-900">Nome:</span> {viewModalData.nome}</p>
-                  <p><span className="font-medium text-gray-900">CPF:</span> {viewModalData.cpf}</p>
-                  <p><span className="font-medium text-gray-900">Data de Nasc.:</span> {new Date(viewModalData.data_nascimento).toLocaleDateString('pt-BR')} ({calcularIdade(viewModalData.data_nascimento)} anos)</p>
-                  <p><span className="font-medium text-gray-900">Estado Civil:</span> {viewModalData.estado_civil || '-'}</p>
-                  <p><span className="font-medium text-gray-900">Telefone:</span> {viewModalData.telefone}</p>
+            <div className="flex flex-col md:flex-row gap-6 mb-6">
+              {viewModalData.foto_url && (
+                <div className="flex-shrink-0 flex justify-center items-start">
+                  <div className="w-40 h-48 rounded-xl overflow-hidden border border-slate-200 shadow-md">
+                    <img src={viewModalData.foto_url} alt="Foto do Membro" className="w-full h-full object-cover" />
+                  </div>
                 </div>
-              </div>
-
-              <div>
-                <h3 className="text-sm font-semibold text-gray-500 uppercase">Igreja e Ministério</h3>
-                <div className="mt-2 space-y-2">
-                  <p><span className="font-medium text-gray-900">Igreja:</span> {viewModalData.igreja}</p>
-                  <p><span className="font-medium text-gray-900">Pastor:</span> {viewModalData.pastor}</p>
-                  <p><span className="font-medium text-gray-900">Cargo:</span> {viewModalData.cargo || '-'}</p>
-                  <p><span className="font-medium text-gray-900">Função:</span> {viewModalData.funcao || '-'}</p>
-                  <p><span className="font-medium text-gray-900">Data Consagração:</span> {viewModalData.data_consagracao ? new Date(viewModalData.data_consagracao).toLocaleDateString('pt-BR') : '-'}</p>
+              )}
+              
+              <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-6">
+                <div>
+                  <h3 className="text-sm font-semibold text-gray-500 uppercase">Informações Pessoais</h3>
+                  <div className="mt-2 space-y-2 text-sm text-gray-700">
+                    <p><span className="font-semibold text-gray-900">Nome:</span> {viewModalData.nome}</p>
+                    <p><span className="font-semibold text-gray-900">CPF:</span> {viewModalData.cpf}</p>
+                    <p><span className="font-semibold text-gray-900">RG:</span> {viewModalData.rg || '-'}</p>
+                    <p><span className="font-semibold text-gray-900">Naturalidade:</span> {viewModalData.naturalidade || '-'}</p>
+                    <p><span className="font-semibold text-gray-900">Data de Nasc.:</span> {new Date(viewModalData.data_nascimento).toLocaleDateString('pt-BR')} ({calcularIdade(viewModalData.data_nascimento)} anos)</p>
+                    <div className="pt-1">
+                      <span className="font-semibold text-gray-900">Filiação:</span>
+                      <div className="pl-3 border-l-2 border-slate-100 mt-1">
+                        <p><span className="font-medium text-gray-600">Pai:</span> {viewModalData.nome_pai || '-'}</p>
+                        <p><span className="font-medium text-gray-600">Mãe:</span> {viewModalData.nome_mae || '-'}</p>
+                      </div>
+                    </div>
+                    <p><span className="font-semibold text-gray-900">Estado Civil:</span> {viewModalData.estado_civil || '-'}</p>
+                    <p><span className="font-semibold text-gray-900">Telefone:</span> {viewModalData.telefone}</p>
+                  </div>
                 </div>
-              </div>
 
-              <div className="md:col-span-2">
-                <h3 className="text-sm font-semibold text-gray-500 uppercase">Endereço</h3>
-                <div className="mt-2 space-y-2">
-                  <p><span className="font-medium text-gray-900">Rua:</span> {viewModalData.rua || '-'}, Nº {viewModalData.numero || '-'}</p>
-                  <p><span className="font-medium text-gray-900">Bairro:</span> {viewModalData.bairro || '-'}</p>
-                  <p><span className="font-medium text-gray-900">Cidade/UF:</span> {viewModalData.cidade || '-'}/{viewModalData.estado || '-'}</p>
-                  <p><span className="font-medium text-gray-900">CEP:</span> {viewModalData.cep || '-'}</p>
+                <div>
+                  <h3 className="text-sm font-semibold text-gray-500 uppercase">Igreja e Ministério</h3>
+                  <div className="mt-2 space-y-2 text-sm text-gray-700">
+                    <p><span className="font-semibold text-gray-900">Igreja:</span> {viewModalData.igreja}</p>
+                    <p><span className="font-semibold text-gray-900">Pastor:</span> {viewModalData.pastor}</p>
+                    <p><span className="font-semibold text-gray-900">Cargo:</span> {viewModalData.cargo || '-'}</p>
+                    <p><span className="font-semibold text-gray-900">Função:</span> {viewModalData.funcao || '-'}</p>
+                    <p><span className="font-semibold text-gray-900">Data Batismo:</span> {viewModalData.data_batismo ? new Date(viewModalData.data_batismo).toLocaleDateString('pt-BR') : '-'}</p>
+                    <p><span className="font-semibold text-gray-900">Data Consagração:</span> {viewModalData.data_consagracao ? new Date(viewModalData.data_consagracao).toLocaleDateString('pt-BR') : '-'}</p>
+                  </div>
+                </div>
+
+                <div className="sm:col-span-2 border-t pt-4">
+                  <h3 className="text-sm font-semibold text-gray-500 uppercase">Endereço</h3>
+                  <div className="mt-2 space-y-1 text-sm text-gray-700">
+                    <p><span className="font-semibold text-gray-900">Rua:</span> {viewModalData.rua || '-'}, Nº {viewModalData.numero || '-'}</p>
+                    <p><span className="font-semibold text-gray-900">Bairro:</span> {viewModalData.bairro || '-'}</p>
+                    <p><span className="font-semibold text-gray-900">Cidade/UF:</span> {viewModalData.cidade || '-'}/{viewModalData.estado || '-'}</p>
+                    <p><span className="font-semibold text-gray-900">CEP:</span> {viewModalData.cep || '-'}</p>
+                  </div>
                 </div>
               </div>
             </div>
