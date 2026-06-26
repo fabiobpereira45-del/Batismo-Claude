@@ -536,7 +536,15 @@ export default function FormularioBatismo() {
       let uploadedFotoUrl = formData.foto_url || "";
       if (fotoFile) {
         const cpfLimpo = formData.cpf.replace(/\D/g, "");
-        const fileExt = "jpg"; // Salvar sempre em JPEG comprimido do canvas
+        let fileExt = "jpg";
+        let contentType = "image/jpeg";
+        if (fotoFile instanceof File) {
+          const parts = fotoFile.name.split('.');
+          if (parts.length > 1) {
+            fileExt = parts.pop()?.toLowerCase() || "jpg";
+          }
+          contentType = fotoFile.type || "image/jpeg";
+        }
         const fileName = `${cpfLimpo}-${Date.now()}.${fileExt}`;
         const filePath = `membros/${fileName}`;
         
@@ -545,7 +553,7 @@ export default function FormularioBatismo() {
           .upload(filePath, fotoFile, {
             cacheControl: '3600',
             upsert: true,
-            contentType: 'image/jpeg'
+            contentType: contentType
           });
           
         if (uploadError) {
@@ -816,7 +824,7 @@ export default function FormularioBatismo() {
                     </Button>
                   )}
                 </div>
-                <input type="file" ref={fileInputRef} onChange={handleFileChange} accept="image/*" capture="user" className="hidden" />
+                <input type="file" ref={fileInputRef} onChange={handleFileChange} accept="image/*" className="hidden" />
                 {cameraError && <p className="text-xs text-red-600 font-medium">{cameraError}</p>}
                 {errors.foto && <p className="text-xs text-red-600 font-medium">{errors.foto}</p>}
               </div>
