@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/lib/auth-context';
@@ -15,6 +15,22 @@ const LoginForm = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
+
+  // Timeout de segurança: se "Aguarde..." durar mais de 15s, desbloquear o botão
+  const safetyTimeout = useRef<NodeJS.Timeout | null>(null);
+  useEffect(() => {
+    if (loading) {
+      safetyTimeout.current = setTimeout(() => {
+        setLoading(false);
+        setError('Tempo limite excedido. Verifique sua conexão e tente novamente.');
+      }, 15000);
+    } else {
+      if (safetyTimeout.current) clearTimeout(safetyTimeout.current);
+    }
+    return () => {
+      if (safetyTimeout.current) clearTimeout(safetyTimeout.current);
+    };
+  }, [loading]);
 
   // Redirecionar se já estiver logado ao carregar a página (sessão existente)
   useEffect(() => {

@@ -123,8 +123,8 @@ export default function AdminDashboard() {
     }
   };
 
-  const handleLogout = async () => {
-    await signOut();
+  const handleLogout = () => {
+    signOut(); // limpa estado imediatamente, revoga sessão em background
     router.push('/admin/login');
   };
 

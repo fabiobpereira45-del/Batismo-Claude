@@ -200,10 +200,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const signOut = async () => {
-    skipNextEvent.current = true;
-    await supabase.auth.signOut();
+    // 1. Limpar estado IMEDIATAMENTE — UI responde na hora
     setUser(null);
     setIsMaster(false);
+    // 2. Avisar o listener para ignorar o SIGNED_OUT que vai disparar
+    skipNextEvent.current = true;
+    // 3. Revogar sessão no servidor em background (fire-and-forget)
+    //    Se falhar na rede, o estado local já foi limpo
+    supabase.auth.signOut().catch(console.error);
+    // 4. Garantia extra: limpar o localStorage do Supabase
+    //    (previne sessão "fantasma" se o signOut de rede falhar)
+    try {
+      Object.keys(localStorage).forEach(key => {
+        if (key.startsWith('sb-')) localStorage.removeItem(key);
+      });
+    } catch (e) {
+      // localStorage pode não estar disponível em SSR
+    }
   };
 
   return (

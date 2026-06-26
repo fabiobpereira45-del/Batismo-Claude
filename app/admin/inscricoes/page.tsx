@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
@@ -96,90 +96,26 @@ export default function InscricoesPage() {
   const [cargos, setCargos] = useState<string[]>([]);
   const [funcoes, setFuncoes] = useState<string[]>([]);
 
-  useEffect(() => {
-    // Só busca as opções de filtro quando o usuário está autenticado
-    if (user) {
-      fetchOpcoes();
-    }
-  }, [user]);
-
-  useEffect(() => {
-    if (!user) return; // Só busca se o usuário estiver logado
-    
-    const delayDebounceFn = setTimeout(() => {
-      fetchInscricoes();
-    }, 300);
-
-    return () => clearTimeout(delayDebounceFn);
-  }, [user, filtroNome, filtroCpf, filtroIgreja, filtroPastor, filtroCargo, filtroFuncao]);
-
-  const fetchOpcoes = async () => {
-    try {
-      const { data: igrejasData } = await supabase
-        .from('inscricoes_batismo')
-        .select('igreja')
-        .order('igreja');
-      
-      const { data: pastoresData } = await supabase
-        .from('inscricoes_batismo')
-        .select('pastor')
-        .order('pastor');
-
-      const { data: cargosData } = await supabase
-        .from('inscricoes_batismo')
-        .select('cargo')
-        .order('cargo');
-
-      const { data: funcoesData } = await supabase
-        .from('inscricoes_batismo')
-        .select('funcao')
-        .order('funcao');
-
-      const igrejasUnicas = Array.from(new Set(igrejasData?.map(i => i.igreja) || []));
-      const pastoresUnicos = Array.from(new Set(pastoresData?.map(p => p.pastor) || []));
-      const cargosUnicos = Array.from(new Set(cargosData?.map(c => c.cargo).filter(Boolean) || []));
-      const funcoesUnicas = Array.from(new Set(funcoesData?.map(f => f.funcao).filter(Boolean) || []));
-      
-      setIgrejas(igrejasUnicas);
-      setPastores(pastoresUnicos);
-      setCargos(cargosUnicos);
-      setFuncoes(funcoesUnicas);
-    } catch (err) {
-      console.error('Erro ao buscar opções:', err);
-    }
-  };
-
-  const fetchInscricoes = async () => {
+  // fetchInscricoes com useCallback garante que o useEffect sempre usa a versão
+  // atualizada com os valores corretos dos filtros (sem stale closure)
+  const fetchInscricoes = useCallback(async () => {
+    if (!user) return;
     try {
       setLoading(true);
+      setError(null);
       let query = supabase
         .from('inscricoes_batismo')
         .select('*')
         .order('nome', { ascending: true });
 
-      // Aplicar filtros
-      if (filtroNome) {
-        query = query.ilike('nome', `%${filtroNome}%`);
-      }
-      if (filtroCpf) {
-        query = query.ilike('cpf', `%${filtroCpf}%`);
-      }
-      if (filtroIgreja) {
-        query = query.eq('igreja', filtroIgreja);
-      }
-      if (filtroPastor) {
-        query = query.eq('pastor', filtroPastor);
-      }
-      if (filtroCargo) {
-        query = query.eq('cargo', filtroCargo);
-      }
-      if (filtroFuncao) {
-        query = query.eq('funcao', filtroFuncao);
-      }
-
+      if (filtroNome)   query = query.ilike('nome', `%${filtroNome}%`);
+      if (filtroCpf)    query = query.ilike('cpf', `%${filtroCpf}%`);
+      if (filtroIgreja) query = query.eq('igreja', filtroIgreja);
+      if (filtroPastor) query = query.eq('pastor', filtroPastor);
+      if (filtroCargo)  query = query.eq('cargo', filtroCargo);
+      if (filtroFuncao) query = query.eq('funcao', filtroFuncao);
 
       const { data, error } = await query;
-
       if (error) throw error;
       setInscricoes(data || []);
     } catch (err: any) {
@@ -187,21 +123,59 @@ export default function InscricoesPage() {
     } finally {
       setLoading(false);
     }
+  }, [user, filtroNome, filtroCpf, filtroIgreja, filtroPastor, filtroCargo, filtroFuncao]);
+
+  // Buscar opções dos dropdowns apenas uma vez ao autenticar
+  useEffect(() => {
+    if (user) fetchOpcoes();
+  }, [user]);
+
+  // Re-buscar sempre que os filtros mudarem (com debounce de 300ms)
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      fetchInscricoes();
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [fetchInscricoes]); // fetchInscricoes já inclui todas as deps de filtro via useCallback
+
+  const fetchOpcoes = async () => {
+    try {
+      const { data: igrejasData } = await supabase
+        .from('inscricoes_batismo')
+        .select('igreja')
+        .order('igreja');
+      const { data: pastoresData } = await supabase
+        .from('inscricoes_batismo')
+        .select('pastor')
+        .order('pastor');
+      const { data: cargosData } = await supabase
+        .from('inscricoes_batismo')
+        .select('cargo')
+        .order('cargo');
+      const { data: funcoesData } = await supabase
+        .from('inscricoes_batismo')
+        .select('funcao')
+        .order('funcao');
+
+      setIgrejas(Array.from(new Set(igrejasData?.map(i => i.igreja) || [])));
+      setPastores(Array.from(new Set(pastoresData?.map(p => p.pastor) || [])));
+      setCargos(Array.from(new Set(cargosData?.map(c => c.cargo).filter(Boolean) || [])));
+      setFuncoes(Array.from(new Set(funcoesData?.map(f => f.funcao).filter(Boolean) || [])));
+    } catch (err) {
+      console.error('Erro ao buscar opções:', err);
+    }
   };
 
   const handleDelete = async (id: string, nome: string) => {
     if (!confirm(`Tem certeza que deseja excluir a inscrição de ${nome}?`)) {
       return;
     }
-
     try {
       const { error } = await supabase
         .from('inscricoes_batismo')
         .delete()
         .eq('id', id);
-
       if (error) throw error;
-      
       alert('Inscrição excluída com sucesso!');
       fetchInscricoes();
     } catch (err: any) {
@@ -221,14 +195,14 @@ export default function InscricoesPage() {
   };
 
   const limparFiltros = () => {
+    // Apenas limpar os estados — o useEffect + useCallback cuidam de re-buscar
+    // com os valores zerados automaticamente
     setFiltroNome('');
     setFiltroCpf('');
     setFiltroIgreja('');
     setFiltroPastor('');
     setFiltroCargo('');
     setFiltroFuncao('');
-
-    fetchInscricoes();
   };
 
   // Mostrar loading apenas enquanto a auth ainda não foi resolvida
