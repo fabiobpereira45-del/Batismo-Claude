@@ -154,6 +154,66 @@ const igrejasData = [
   { nome: "ADMTN - VILA MOISÉS", pastor: "Pb. Augusto Spinola" }
 ];
 
+const ESTADOS_BRASILEIROS = [
+  { sigla: "AC", nome: "Acre" },
+  { sigla: "AL", nome: "Alagoas" },
+  { sigla: "AP", nome: "Amapá" },
+  { sigla: "AM", nome: "Amazonas" },
+  { sigla: "BA", nome: "Bahia" },
+  { sigla: "CE", nome: "Ceará" },
+  { sigla: "DF", nome: "Distrito Federal" },
+  { sigla: "ES", nome: "Espírito Santo" },
+  { sigla: "GO", nome: "Goiás" },
+  { sigla: "MA", nome: "Maranhão" },
+  { sigla: "MT", nome: "Mato Grosso" },
+  { sigla: "MS", nome: "Mato Grosso do Sul" },
+  { sigla: "MG", nome: "Minas Gerais" },
+  { sigla: "PA", nome: "Pará" },
+  { sigla: "PB", nome: "Paraíba" },
+  { sigla: "PR", nome: "Paraná" },
+  { sigla: "PE", nome: "Pernambuco" },
+  { sigla: "PI", nome: "Piauí" },
+  { sigla: "RJ", nome: "Rio de Janeiro" },
+  { sigla: "RN", nome: "Rio Grande do Norte" },
+  { sigla: "RS", nome: "Rio Grande do Sul" },
+  { sigla: "RO", nome: "Rondônia" },
+  { sigla: "RR", nome: "Roraima" },
+  { sigla: "SC", nome: "Santa Catarina" },
+  { sigla: "SP", nome: "São Paulo" },
+  { sigla: "SE", nome: "Sergipe" },
+  { sigla: "TO", nome: "Tocantins" }
+];
+
+const CAPITAIS: Record<string, string> = {
+  AC: "Rio Branco",
+  AL: "Maceió",
+  AP: "Macapá",
+  AM: "Manaus",
+  BA: "Salvador",
+  CE: "Fortaleza",
+  DF: "Brasília",
+  ES: "Vitória",
+  GO: "Goiânia",
+  MA: "São Luís",
+  MT: "Cuiabá",
+  MS: "Campo Grande",
+  MG: "Belo Horizonte",
+  PA: "Belém",
+  PB: "João Pessoa",
+  PR: "Curitiba",
+  PE: "Recife",
+  PI: "Teresina",
+  RJ: "Rio de Janeiro",
+  RN: "Natal",
+  RS: "Porto Alegre",
+  RO: "Porto Velho",
+  RR: "Boa Vista",
+  SC: "Florianópolis",
+  SP: "São Paulo",
+  SE: "Aracaju",
+  TO: "Palmas"
+};
+
 export default function FormularioBatismo() {
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
@@ -204,6 +264,85 @@ export default function FormularioBatismo() {
   const [fotoFile, setFotoFile] = useState<File | Blob | null>(null);
   const [fotoPreview, setFotoPreview] = useState<string | null>(null);
   const [facingMode, setFacingMode] = useState<'user' | 'environment'>('user');
+
+  const [estadoNaturalidade, setEstadoNaturalidade] = useState<string>("BA");
+  const [cidades, setCidades] = useState<string[]>(CIDADES_BAHIA);
+  const [carregandoCidades, setCarregandoCidades] = useState<boolean>(false);
+  const [cidadesCache, setCidadesCache] = useState<Record<string, string[]>>({
+    BA: CIDADES_BAHIA
+  });
+
+  const detectarEstadoPorCidade = async (nomeCidade: string): Promise<string> => {
+    if (!nomeCidade) return "BA";
+    
+    // Se estiver na lista estática da Bahia, é BA
+    if (CIDADES_BAHIA.includes(nomeCidade)) {
+      return "BA";
+    }
+    
+    try {
+      const response = await fetch(`https://servicodados.ibge.gov.br/api/v1/localidades/municipios?nome=${encodeURIComponent(nomeCidade)}`);
+      const data = await response.json();
+      if (data && data.length > 0) {
+        return data[0].microrregiao.mesorregiao.UF.sigla;
+      }
+    } catch (error) {
+      console.error("Erro ao detectar estado:", error);
+    }
+    return "BA";
+  };
+
+  const carregarCidadesDoEstado = async (uf: string, selecionarCapitalPadrao: boolean = false) => {
+    if (!uf) {
+      setCidades([]);
+      return;
+    }
+
+    if (cidadesCache[uf]) {
+      const listaCidades = cidadesCache[uf];
+      setCidades(listaCidades);
+      if (selecionarCapitalPadrao) {
+        const capital = CAPITAIS[uf];
+        if (capital && listaCidades.includes(capital)) {
+          setFormData(prev => ({ ...prev, naturalidade: capital }));
+        } else if (listaCidades.length > 0) {
+          setFormData(prev => ({ ...prev, naturalidade: listaCidades[0] }));
+        }
+      }
+      return;
+    }
+
+    setCarregandoCidades(true);
+    try {
+      const response = await fetch(`https://servicodados.ibge.gov.br/api/v1/localidades/estados/${uf}/municipios?ordenar=nome`);
+      if (!response.ok) throw new Error("Erro na requisição");
+      const data = await response.json();
+      const listaCidades: string[] = data.map((item: any) => item.nome);
+      
+      setCidadesCache(prev => ({ ...prev, [uf]: listaCidades }));
+      setCidades(listaCidades);
+      
+      if (selecionarCapitalPadrao) {
+        const capital = CAPITAIS[uf];
+        if (capital && listaCidades.includes(capital)) {
+          setFormData(prev => ({ ...prev, naturalidade: capital }));
+        } else if (listaCidades.length > 0) {
+          setFormData(prev => ({ ...prev, naturalidade: listaCidades[0] }));
+        }
+      }
+    } catch (err) {
+      console.error("Erro ao carregar cidades:", err);
+      setCidades([]);
+    } finally {
+      setCarregandoCidades(false);
+    }
+  };
+
+  const handleEstadoNaturalidadeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const uf = e.target.value;
+    setEstadoNaturalidade(uf);
+    carregarCidadesDoEstado(uf, true);
+  };
 
   useEffect(() => {
     return () => {
@@ -472,6 +611,8 @@ export default function FormularioBatismo() {
     setModoBusca(false);
     setCpfBusca("");
     setErrorBusca(null);
+    setEstadoNaturalidade("BA");
+    setCidades(CIDADES_BAHIA);
   };
 
   const handleBuscarCadastro = async () => {
@@ -502,6 +643,11 @@ export default function FormularioBatismo() {
         setErrorBusca("CPF inválido ou não há cadastro");
         return;
       }
+
+      // Detectar estado da naturalidade pré-salva
+      const ufDetectado = await detectarEstadoPorCidade(data.naturalidade || "");
+      setEstadoNaturalidade(ufDetectado);
+      await carregarCidadesDoEstado(ufDetectado, false);
 
       setFormData({
         nome: data.nome || "",
@@ -976,21 +1122,61 @@ export default function FormularioBatismo() {
 
                 <div className={inputClass("naturalidade")}>
                   <label htmlFor="naturalidade" className="text-sm font-medium text-gray-700">
-                    Naturalidade (Cidade da Bahia) *
+                    Naturalidade (Estado e Cidade) *
                   </label>
-                  <select
-                    id="naturalidade"
-                    name="naturalidade"
-                    value={formData.naturalidade}
-                    onChange={handleChange}
-                    required
-                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                  >
-                    <option value="">Selecione a cidade...</option>
-                    {CIDADES_BAHIA.map((cidade) => (
-                      <option key={cidade} value={cidade}>{cidade}</option>
-                    ))}
-                  </select>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    {/* Seletor de Estado */}
+                    <select
+                      id="estado_naturalidade"
+                      name="estado_naturalidade"
+                      value={estadoNaturalidade}
+                      onChange={handleEstadoNaturalidadeChange}
+                      className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      {ESTADOS_BRASILEIROS.map((est) => (
+                        <option key={est.sigla} value={est.sigla}>
+                          {est.nome} ({est.sigla})
+                        </option>
+                      ))}
+                    </select>
+
+                    {/* Seletor de Cidade */}
+                    <select
+                      id="naturalidade"
+                      name="naturalidade"
+                      value={formData.naturalidade}
+                      onChange={handleChange}
+                      required
+                      disabled={carregandoCidades}
+                      className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      <option value="">
+                        {carregandoCidades ? "Carregando..." : "Selecione a cidade..."}
+                      </option>
+                      {/* Mostrar Capital se existir na lista e for o estado selecionado */}
+                      {(() => {
+                        const capital = CAPITAIS[estadoNaturalidade];
+                        const cidadesFiltradas = cidades.filter(c => c !== capital);
+                        return (
+                          <>
+                            {capital && cidades.includes(capital) && (
+                              <option value={capital}>
+                                {capital} (Capital)
+                              </option>
+                            )}
+                            {capital && cidades.includes(capital) && (
+                              <option disabled>────────────────────</option>
+                            )}
+                            {cidadesFiltradas.map((cidade) => (
+                              <option key={cidade} value={cidade}>
+                                {cidade}
+                              </option>
+                            ))}
+                          </>
+                        );
+                      })()}
+                    </select>
+                  </div>
                   {errors.naturalidade && (
                     <p className="text-sm text-red-600">{errors.naturalidade}</p>
                   )}
