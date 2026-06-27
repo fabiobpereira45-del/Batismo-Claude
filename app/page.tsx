@@ -15,11 +15,11 @@ export default function Home() {
         </Link>
       </div>
       <div className="max-w-3xl mx-auto relative z-10">
-        <div className="text-center mb-12 mt-4">
+        <div className="text-center mb-6 sm:mb-12 mt-2 sm:mt-4">
           <div className="inline-flex items-center justify-center p-2 rounded-2xl mb-6">
             <Image src="/logo.png" alt="Logo AD Ministério Tancredo Neves" width={150} height={150} className="object-contain" priority />
           </div>
-          <h1 className="text-4xl md:text-5xl font-extrabold text-slate-900 tracking-tight mb-4 drop-shadow-sm">
+          <h1 className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-slate-900 tracking-tight mb-4 drop-shadow-sm">
             Cadastro de Membros <br className="hidden md:block"/>e Obreiros
           </h1>
           <p className="text-lg md:text-xl text-slate-600 font-medium">

@@ -224,11 +224,11 @@ export default function InscricoesPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-4 md:p-8">
+    <div className="min-h-screen bg-gray-50 p-3 sm:p-6 md:p-8">
       <div className="max-w-[96%] mx-auto">
-        <div className="flex justify-between items-center mb-8">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
           <h1 className="text-3xl font-bold text-gray-900">Inscrições</h1>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             <Button
               onClick={handleExportPDF}
               className="bg-blue-600 hover:bg-blue-700 text-white font-medium shadow"
@@ -335,61 +335,65 @@ export default function InscricoesPage() {
             <div className="hidden md:block h-6 w-px bg-gray-200" />
 
             {/* Checkboxes de colunas do PDF */}
-            <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-              <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">Colunas PDF:</span>
-              <label className="flex items-center gap-1.5 cursor-pointer text-sm font-medium text-gray-700">
-                <input type="checkbox" checked={exportColumns.cpf} onChange={(e) => setExportColumns({...exportColumns, cpf: e.target.checked})} className="rounded text-blue-600 focus:ring-blue-500" />
-                <span>CPF</span>
-              </label>
-              <label className="flex items-center gap-1.5 cursor-pointer text-sm font-medium text-gray-700">
-                <input type="checkbox" checked={exportColumns.igrejaPastor} onChange={(e) => setExportColumns({...exportColumns, igrejaPastor: e.target.checked})} className="rounded text-blue-600 focus:ring-blue-500" />
-                <span>Igreja/Pastor</span>
-              </label>
-              <label className="flex items-center gap-1.5 cursor-pointer text-sm font-medium text-gray-700">
-                <input type="checkbox" checked={exportColumns.idade} onChange={(e) => setExportColumns({...exportColumns, idade: e.target.checked})} className="rounded text-blue-600 focus:ring-blue-500" />
-                <span>Idade</span>
-              </label>
-              <label className="flex items-center gap-1.5 cursor-pointer text-sm font-medium text-gray-700">
-                <input type="checkbox" checked={exportColumns.telefone} onChange={(e) => setExportColumns({...exportColumns, telefone: e.target.checked})} className="rounded text-blue-600 focus:ring-blue-500" />
-                <span>Tel</span>
-              </label>
-              <label className="flex items-center gap-1.5 cursor-pointer text-sm font-medium text-gray-700">
-                <input type="checkbox" checked={exportColumns.cargoFuncao} onChange={(e) => setExportColumns({...exportColumns, cargoFuncao: e.target.checked})} className="rounded text-blue-600 focus:ring-blue-500" />
-                <span>Cargo/Função</span>
-              </label>
-              <label className="flex items-center gap-1.5 cursor-pointer text-sm font-medium text-gray-700">
-                <input type="checkbox" checked={exportColumns.estadoCivil} onChange={(e) => setExportColumns({...exportColumns, estadoCivil: e.target.checked})} className="rounded text-blue-600 focus:ring-blue-500" />
-                <span>Est. Civil</span>
-              </label>
-              <label className="flex items-center gap-1.5 cursor-pointer text-sm font-medium text-gray-700">
-                <input type="checkbox" checked={exportColumns.endereco} onChange={(e) => setExportColumns({...exportColumns, endereco: e.target.checked})} className="rounded text-blue-600 focus:ring-blue-500" />
-                <span>Endereço</span>
-              </label>
+            <div className="flex flex-col sm:flex-row sm:items-center gap-2 w-full">
+              <span className="text-xs font-bold text-gray-400 uppercase tracking-wider min-w-[100px]">Colunas PDF:</span>
+              <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                <label className="flex items-center gap-1.5 cursor-pointer text-sm font-medium text-gray-700">
+                  <input type="checkbox" checked={exportColumns.cpf} onChange={(e) => setExportColumns({...exportColumns, cpf: e.target.checked})} className="rounded text-blue-600 focus:ring-blue-500" />
+                  <span>CPF</span>
+                </label>
+                <label className="flex items-center gap-1.5 cursor-pointer text-sm font-medium text-gray-700">
+                  <input type="checkbox" checked={exportColumns.igrejaPastor} onChange={(e) => setExportColumns({...exportColumns, igrejaPastor: e.target.checked})} className="rounded text-blue-600 focus:ring-blue-500" />
+                  <span>Igreja/Pastor</span>
+                </label>
+                <label className="flex items-center gap-1.5 cursor-pointer text-sm font-medium text-gray-700">
+                  <input type="checkbox" checked={exportColumns.idade} onChange={(e) => setExportColumns({...exportColumns, idade: e.target.checked})} className="rounded text-blue-600 focus:ring-blue-500" />
+                  <span>Idade</span>
+                </label>
+                <label className="flex items-center gap-1.5 cursor-pointer text-sm font-medium text-gray-700">
+                  <input type="checkbox" checked={exportColumns.telefone} onChange={(e) => setExportColumns({...exportColumns, telefone: e.target.checked})} className="rounded text-blue-600 focus:ring-blue-500" />
+                  <span>Tel</span>
+                </label>
+                <label className="flex items-center gap-1.5 cursor-pointer text-sm font-medium text-gray-700">
+                  <input type="checkbox" checked={exportColumns.cargoFuncao} onChange={(e) => setExportColumns({...exportColumns, cargoFuncao: e.target.checked})} className="rounded text-blue-600 focus:ring-blue-500" />
+                  <span>Cargo/Função</span>
+                </label>
+                <label className="flex items-center gap-1.5 cursor-pointer text-sm font-medium text-gray-700">
+                  <input type="checkbox" checked={exportColumns.estadoCivil} onChange={(e) => setExportColumns({...exportColumns, estadoCivil: e.target.checked})} className="rounded text-blue-600 focus:ring-blue-500" />
+                  <span>Est. Civil</span>
+                </label>
+                <label className="flex items-center gap-1.5 cursor-pointer text-sm font-medium text-gray-700">
+                  <input type="checkbox" checked={exportColumns.endereco} onChange={(e) => setExportColumns({...exportColumns, endereco: e.target.checked})} className="rounded text-blue-600 focus:ring-blue-500" />
+                  <span>Endereço</span>
+                </label>
+              </div>
             </div>
 
             {/* Divisor vertical */}
             <div className="hidden lg:block h-6 w-px bg-gray-200" />
 
             {/* Checkboxes de Cargos */}
-            <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-              <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">Filtrar Cargos:</span>
-              {['MEMBRO', 'AUXILIAR', 'DIÁCONO', 'PRESBÍTERO', 'EVANGELISTA', 'PASTOR'].map((cargo) => (
-                <label key={cargo} className="flex items-center gap-1.5 cursor-pointer text-sm font-medium text-gray-700">
-                  <input
-                    type="checkbox"
-                    checked={selectedCargos.includes(cargo)}
-                    onChange={(e) => {
-                      if (e.target.checked) {
-                        setSelectedCargos([...selectedCargos, cargo]);
-                      } else {
-                        setSelectedCargos(selectedCargos.filter((c) => c !== cargo));
-                      }
-                    }}
-                    className="rounded text-blue-600 focus:ring-blue-500"
-                  />
-                  <span>{cargo}</span>
-                </label>
-              ))}
+            <div className="flex flex-col sm:flex-row sm:items-center gap-2 w-full">
+              <span className="text-xs font-bold text-gray-400 uppercase tracking-wider min-w-[100px]">Filtrar Cargos:</span>
+              <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                {['MEMBRO', 'AUXILIAR', 'DIÁCONO', 'PRESBÍTERO', 'EVANGELISTA', 'PASTOR'].map((cargo) => (
+                  <label key={cargo} className="flex items-center gap-1.5 cursor-pointer text-sm font-medium text-gray-700">
+                    <input
+                      type="checkbox"
+                      checked={selectedCargos.includes(cargo)}
+                      onChange={(e) => {
+                        if (e.target.checked) {
+                          setSelectedCargos([...selectedCargos, cargo]);
+                        } else {
+                          setSelectedCargos(selectedCargos.filter((c) => c !== cargo));
+                        }
+                      }}
+                      className="rounded text-blue-600 focus:ring-blue-500"
+                    />
+                    <span>{cargo}</span>
+                  </label>
+                ))}
+              </div>
             </div>
           </div>
         </div>

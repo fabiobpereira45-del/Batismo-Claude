@@ -649,7 +649,7 @@ export default function FormularioBatismo() {
   if (success) {
     return (
       <Card className="border-0 shadow-2xl shadow-indigo-200/50 bg-white/80 backdrop-blur-xl rounded-3xl overflow-hidden">
-        <CardContent className="p-5 sm:p-10">
+        <CardContent className="p-4 sm:p-10">
           <div className="text-center py-8">
             <div className="text-5xl mb-4">🎉</div>
             <h2 className="text-2xl font-semibold text-green-600 mb-2">
@@ -680,7 +680,7 @@ export default function FormularioBatismo() {
           <button
             type="button"
             onClick={() => { setModoBusca(false); resetForm(); }}
-            className={`flex-1 py-2.5 text-sm font-semibold rounded-2xl transition-all ${
+            className={`flex-1 py-2 sm:py-2.5 text-xs sm:text-sm font-semibold rounded-2xl transition-all ${
               !modoBusca
                 ? "bg-white text-indigo-600 shadow-sm border border-slate-100"
                 : "text-slate-500 hover:text-slate-800 hover:bg-slate-100/50"
@@ -691,7 +691,7 @@ export default function FormularioBatismo() {
           <button
             type="button"
             onClick={() => { setModoBusca(true); setErrorBusca(null); setCpfBusca(""); }}
-            className={`flex-1 py-2.5 text-sm font-semibold rounded-2xl transition-all ${
+            className={`flex-1 py-2 sm:py-2.5 text-xs sm:text-sm font-semibold rounded-2xl transition-all ${
               modoBusca
                 ? "bg-white text-indigo-600 shadow-sm border border-slate-100"
                 : "text-slate-500 hover:text-slate-800 hover:bg-slate-100/50"
@@ -702,7 +702,7 @@ export default function FormularioBatismo() {
         </div>
       )}
 
-      <CardContent className="p-5 sm:p-10">
+      <CardContent className="p-4 sm:p-10">
         {modoBusca ? (
           <form
             onSubmit={(e) => {
@@ -791,35 +791,35 @@ export default function FormularioBatismo() {
                 <canvas ref={canvasRef} className="hidden" />
               </div>
               
-              <div className="flex-1 space-y-3">
-                <p className="text-xs text-slate-500 max-w-sm">
+              <div className="flex-1 w-full space-y-3 text-center sm:text-left">
+                <p className="text-xs text-slate-500 max-w-sm mx-auto sm:mx-0">
                   Tire uma foto nítida do rosto (estilo documento). Se estiver no celular, você pode tirar a selfie diretamente ou carregar um arquivo da galeria.
                 </p>
-                <div className="flex flex-wrap gap-2">
+                <div className="flex flex-col sm:flex-row flex-wrap gap-2 justify-center sm:justify-start">
                   {cameraAtiva ? (
                     <>
-                      <Button type="button" onClick={capturarFoto} className="bg-green-600 hover:bg-green-700 text-white gap-2">
+                      <Button type="button" onClick={capturarFoto} className="w-full sm:w-auto bg-green-600 hover:bg-green-700 text-white gap-2">
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/></svg>
                         Tirar Foto
                       </Button>
-                      <Button type="button" onClick={desligarCamera} variant="outline" className="text-red-600 hover:text-red-700 border-red-200">
+                      <Button type="button" onClick={desligarCamera} variant="outline" className="w-full sm:w-auto text-red-600 hover:text-red-700 border-red-200">
                         Cancelar
                       </Button>
                     </>
                   ) : (
                     <>
-                      <Button type="button" onClick={ligarCamera} className="bg-indigo-600 hover:bg-indigo-700 text-white gap-2">
+                      <Button type="button" onClick={ligarCamera} className="w-full sm:w-auto bg-indigo-600 hover:bg-indigo-700 text-white gap-2">
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></svg>
                         Usar Câmera
                       </Button>
-                      <Button type="button" onClick={() => fileInputRef.current?.click()} variant="outline" className="gap-2">
+                      <Button type="button" onClick={() => fileInputRef.current?.click()} variant="outline" className="w-full sm:w-auto gap-2">
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" x2="12" y1="3" y2="15"/></svg>
                         Carregar Arquivo
                       </Button>
                     </>
                   )}
                   {fotoPreview && (
-                    <Button type="button" onClick={() => { setFotoPreview(null); setFotoFile(null); }} variant="secondary" className="text-slate-600">
+                    <Button type="button" onClick={() => { setFotoPreview(null); setFotoFile(null); }} variant="secondary" className="w-full sm:w-auto text-slate-600">
                       Remover Foto
                     </Button>
                   )}

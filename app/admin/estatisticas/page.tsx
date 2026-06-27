@@ -143,11 +143,11 @@ export default function EstatisticasPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 p-8">
+    <div className="min-h-screen bg-gray-50 p-4 sm:p-8">
       <div className="max-w-7xl mx-auto">
-        <div className="flex justify-between items-center mb-8">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
           <h1 className="text-3xl font-bold text-gray-900">Estatísticas e Gráficos</h1>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             <Link href="/admin/inscricoes">
               <Button variant="outline">Ver Inscrições</Button>
             </Link>
@@ -171,19 +171,19 @@ export default function EstatisticasPage() {
           <>
             {/* Cards de Resumo */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-              <div className="bg-white p-6 rounded-lg shadow border-l-4 border-blue-500">
+              <div className="bg-white p-6 rounded-lg shadow border-l-4 border-blue-500 overflow-hidden">
                 <h3 className="text-sm font-medium text-gray-500 uppercase">Total de Inscrições</h3>
                 <p className="text-3xl font-bold text-gray-900 mt-2">{totalInscritos}</p>
               </div>
-              <div className="bg-white p-6 rounded-lg shadow border-l-4 border-green-500">
+              <div className="bg-white p-6 rounded-lg shadow border-l-4 border-green-500 overflow-hidden">
                 <h3 className="text-sm font-medium text-gray-500 uppercase">Média de Idade</h3>
                 <p className="text-3xl font-bold text-gray-900 mt-2">{mediaIdade} <span className="text-lg font-normal text-gray-500">anos</span></p>
               </div>
-              <div className="bg-white p-6 rounded-lg shadow border-l-4 border-yellow-500">
+              <div className="bg-white p-6 rounded-lg shadow border-l-4 border-yellow-500 overflow-hidden">
                 <h3 className="text-sm font-medium text-gray-500 uppercase">Total de Igrejas</h3>
                 <p className="text-3xl font-bold text-gray-900 mt-2">{dadosIgreja.length}</p>
               </div>
-              <div className="bg-white p-6 rounded-lg shadow border-l-4 border-purple-500">
+              <div className="bg-white p-6 rounded-lg shadow border-l-4 border-purple-500 overflow-hidden">
                 <h3 className="text-sm font-medium text-gray-500 uppercase">Total de Pastores</h3>
                 <p className="text-3xl font-bold text-gray-900 mt-2">{dadosPastor.length}</p>
               </div>
@@ -191,7 +191,7 @@ export default function EstatisticasPage() {
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
               {/* Gráfico de Cargos */}
-              <div className="bg-white p-6 rounded-lg shadow">
+              <div className="bg-white p-4 sm:p-6 rounded-lg shadow overflow-hidden">
                 <h2 className="text-xl font-bold text-gray-900 mb-6">Distribuição por Cargo</h2>
                 <div className="h-80 w-full">
                   <ResponsiveContainer width="100%" height="100%">
@@ -218,7 +218,7 @@ export default function EstatisticasPage() {
               </div>
 
               {/* Gráfico de Funções */}
-              <div className="bg-white p-6 rounded-lg shadow">
+              <div className="bg-white p-4 sm:p-6 rounded-lg shadow overflow-hidden">
                 <h2 className="text-xl font-bold text-gray-900 mb-6">Distribuição por Função</h2>
                 <div className="h-80 w-full">
                   <ResponsiveContainer width="100%" height="100%">
@@ -247,7 +247,7 @@ export default function EstatisticasPage() {
 
             <div className="grid grid-cols-1 gap-8 mb-8">
               {/* Gráfico de Igrejas */}
-              <div className="bg-white p-6 rounded-lg shadow">
+              <div className="bg-white p-4 sm:p-6 rounded-lg shadow overflow-hidden">
                 <h2 className="text-xl font-bold text-gray-900 mb-6">Cadastros por Igreja</h2>
                 <div className="h-96 w-full">
                   <ResponsiveContainer width="100%" height="100%">
@@ -277,7 +277,7 @@ export default function EstatisticasPage() {
               </div>
 
               {/* Gráfico de Pastores */}
-              <div className="bg-white p-6 rounded-lg shadow">
+              <div className="bg-white p-4 sm:p-6 rounded-lg shadow overflow-hidden">
                 <h2 className="text-xl font-bold text-gray-900 mb-6">Cadastros por Pastor</h2>
                 <div className="h-96 w-full">
                   <ResponsiveContainer width="100%" height="100%">
