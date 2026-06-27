@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { generatePDF, generateIndividualPDF } from '@/lib/pdf-generator';
+import { generateExcel } from '@/lib/excel-generator';
 import { useAuth } from '@/lib/auth-context';
 
 interface Inscricao {
@@ -234,6 +235,12 @@ export default function InscricoesPage() {
               className="bg-blue-600 hover:bg-blue-700 text-white font-medium shadow"
             >
               Exportar PDF
+            </Button>
+            <Button
+              onClick={() => generateExcel(inscricoes)}
+              className="bg-green-600 hover:bg-green-700 text-white font-medium shadow"
+            >
+              Exportar Excel (XLSX)
             </Button>
             <Link href="/admin/estatisticas">
               <Button variant="secondary">Estatísticas</Button>
