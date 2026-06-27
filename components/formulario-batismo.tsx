@@ -470,6 +470,13 @@ export default function FormularioBatismo() {
       processedValue = formatData(value);
     } else if (name === "cargo" || name === "funcao" || name === "estado_civil" || name === "naturalidade") {
       processedValue = value;
+      if (name === "cargo" && value === "Membro") {
+        setFormData((prev) => ({ ...prev, cargo: value, data_consagracao: "" }));
+        if (errors.data_consagracao) {
+          setErrors((prev) => ({ ...prev, data_consagracao: undefined }));
+        }
+        return;
+      }
     } else {
       processedValue = value.toUpperCase();
     }
@@ -1319,6 +1326,7 @@ export default function FormularioBatismo() {
                     placeholder="DD/MM/AAAA"
                     maxLength={10}
                     required={formData.cargo !== "Membro"}
+                    disabled={formData.cargo === "Membro"}
                   />
                   {errors.data_consagracao && (
                     <p className="text-sm text-red-600">{errors.data_consagracao}</p>
