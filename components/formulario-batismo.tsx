@@ -203,6 +203,7 @@ export default function FormularioBatismo() {
   const streamRef = useRef<MediaStream | null>(null);
   const [fotoFile, setFotoFile] = useState<File | Blob | null>(null);
   const [fotoPreview, setFotoPreview] = useState<string | null>(null);
+  const [facingMode, setFacingMode] = useState<'user' | 'environment'>('user');
 
   useEffect(() => {
     return () => {
@@ -212,19 +213,20 @@ export default function FormularioBatismo() {
     };
   }, []);
 
-  const ligarCamera = async () => {
+  const ligarCamera = async (mode: 'user' | 'environment' = 'user') => {
     setCameraError(null);
     setCameraAtiva(true);
+    setFacingMode(mode);
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 480 } }
+        video: { facingMode: mode, width: { ideal: 640 }, height: { ideal: 480 } }
       });
       streamRef.current = stream;
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
       }
     } catch (err: any) {
-      console.warn("Camera frontal falhou, tentando câmera padrão...", err);
+      console.warn(`Câmera (${mode}) falhou, tentando câmera padrão...`, err);
       try {
         const stream = await navigator.mediaDevices.getUserMedia({ video: true });
         streamRef.current = stream;
@@ -236,6 +238,15 @@ export default function FormularioBatismo() {
         setCameraAtiva(false);
       }
     }
+  };
+
+  const alternarCamera = async () => {
+    const novoModo = facingMode === 'user' ? 'environment' : 'user';
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach(track => track.stop());
+      streamRef.current = null;
+    }
+    await ligarCamera(novoModo);
   };
 
   const desligarCamera = () => {
@@ -254,11 +265,18 @@ export default function FormularioBatismo() {
       if (ctx) {
         canvas.width = video.videoWidth || 640;
         canvas.height = video.videoHeight || 480;
-        // Inverter para efeito espelho na visualização de selfie
-        ctx.translate(canvas.width, 0);
-        ctx.scale(-1, 1);
+        
+        // Inverter para efeito espelho apenas na visualização de selfie
+        if (facingMode === 'user') {
+          ctx.translate(canvas.width, 0);
+          ctx.scale(-1, 1);
+        }
+        
         ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-        ctx.setTransform(1, 0, 0, 1, 0, 0); // reset
+        
+        if (facingMode === 'user') {
+          ctx.setTransform(1, 0, 0, 1, 0, 0); // reset
+        }
         
         canvas.toBlob((blob) => {
           if (blob) {
@@ -346,8 +364,14 @@ export default function FormularioBatismo() {
       }
     }
 
-    if (!formData.data_consagracao || formData.data_consagracao.length !== 10) {
-      newErrors.data_consagracao = "Data de consagração é obrigatória";
+    if (formData.cargo !== "Membro") {
+      if (!formData.data_consagracao || formData.data_consagracao.length !== 10) {
+        newErrors.data_consagracao = "Data de consagração é obrigatória";
+      }
+    } else {
+      if (formData.data_consagracao && formData.data_consagracao.length !== 10) {
+        newErrors.data_consagracao = "Data de consagração inválida";
+      }
     }
     
     if (!formData.telefone || formData.telefone.replace(/\D/g, "").length < 10) {
@@ -779,7 +803,7 @@ export default function FormularioBatismo() {
                 {fotoPreview ? (
                   <img src={fotoPreview} alt="Preview do Membro" className="w-full h-full object-cover" />
                 ) : cameraAtiva ? (
-                  <video ref={videoRef} autoPlay playsInline className="w-full h-full object-cover scale-x-[-1]" />
+                  <video ref={videoRef} autoPlay playsInline className={`w-full h-full object-cover ${facingMode === 'user' ? 'scale-x-[-1]' : ''}`} />
                 ) : (
                   <div className="text-center text-slate-400 p-2">
                     <svg className="mx-auto h-12 w-12 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -802,13 +826,17 @@ export default function FormularioBatismo() {
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/></svg>
                         Tirar Foto
                       </Button>
+                      <Button type="button" onClick={alternarCamera} variant="outline" className="w-full sm:w-auto gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
+                        Alternar Câmera
+                      </Button>
                       <Button type="button" onClick={desligarCamera} variant="outline" className="w-full sm:w-auto text-red-600 hover:text-red-700 border-red-200">
                         Cancelar
                       </Button>
                     </>
                   ) : (
                     <>
-                      <Button type="button" onClick={ligarCamera} className="w-full sm:w-auto bg-indigo-600 hover:bg-indigo-700 text-white gap-2">
+                      <Button type="button" onClick={() => ligarCamera('user')} className="w-full sm:w-auto bg-indigo-600 hover:bg-indigo-700 text-white gap-2">
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></svg>
                         Usar Câmera
                       </Button>
@@ -1094,7 +1122,7 @@ export default function FormularioBatismo() {
                     htmlFor="data_consagracao"
                     className="text-sm font-medium text-gray-700"
                   >
-                    Data de Consagração *
+                    Data de Consagração {formData.cargo !== "Membro" ? "*" : ""}
                   </label>
                   <Input
                     id="data_consagracao"
@@ -1104,7 +1132,7 @@ export default function FormularioBatismo() {
                     onChange={handleChange}
                     placeholder="DD/MM/AAAA"
                     maxLength={10}
-                    required
+                    required={formData.cargo !== "Membro"}
                   />
                   {errors.data_consagracao && (
                     <p className="text-sm text-red-600">{errors.data_consagracao}</p>
