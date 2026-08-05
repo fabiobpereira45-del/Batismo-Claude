@@ -8,6 +8,7 @@ import { useRouter } from 'next/navigation';
 import { generatePDF, generateIndividualPDF } from '@/lib/pdf-generator';
 import { generateExcel } from '@/lib/excel-generator';
 import { useAuth } from '@/lib/auth-context';
+import { formatDateISOToBR, calcularIdade } from '@/lib/utils';
 
 interface Inscricao {
   id: string;
@@ -37,6 +38,7 @@ interface Inscricao {
   rg?: string;
   data_batismo?: string;
   foto_url?: string;
+  nome_conjuge?: string;
 }
 
 export default function InscricoesPage() {
@@ -184,16 +186,6 @@ export default function InscricoesPage() {
     }
   };
 
-  const calcularIdade = (dataNascimento: string) => {
-    const hoje = new Date();
-    const nascimento = new Date(dataNascimento);
-    let idade = hoje.getFullYear() - nascimento.getFullYear();
-    const mesDiff = hoje.getMonth() - nascimento.getMonth();
-    if (mesDiff < 0 || (mesDiff === 0 && hoje.getDate() < nascimento.getDate())) {
-      idade--;
-    }
-    return idade;
-  };
 
   const limparFiltros = () => {
     // Apenas limpar os estados — o useEffect + useCallback cuidam de re-buscar
@@ -590,7 +582,7 @@ export default function InscricoesPage() {
                     <p><span className="font-semibold text-gray-900">CPF:</span> {viewModalData.cpf}</p>
                     <p><span className="font-semibold text-gray-900">RG:</span> {viewModalData.rg || '-'}</p>
                     <p><span className="font-semibold text-gray-900">Naturalidade:</span> {viewModalData.naturalidade || '-'}</p>
-                    <p><span className="font-semibold text-gray-900">Data de Nasc.:</span> {new Date(viewModalData.data_nascimento).toLocaleDateString('pt-BR')} ({calcularIdade(viewModalData.data_nascimento)} anos)</p>
+                    <p><span className="font-semibold text-gray-900">Data de Nasc.:</span> {formatDateISOToBR(viewModalData.data_nascimento)} ({calcularIdade(viewModalData.data_nascimento)} anos)</p>
                     <div className="pt-1">
                       <span className="font-semibold text-gray-900">Filiação:</span>
                       <div className="pl-3 border-l-2 border-slate-100 mt-1">
@@ -599,6 +591,9 @@ export default function InscricoesPage() {
                       </div>
                     </div>
                     <p><span className="font-semibold text-gray-900">Estado Civil:</span> {viewModalData.estado_civil || '-'}</p>
+                    {(viewModalData.estado_civil === "Casado" || viewModalData.nome_conjuge) && (
+                      <p><span className="font-semibold text-gray-900">Cônjuge:</span> {viewModalData.nome_conjuge || '-'}</p>
+                    )}
                     <p><span className="font-semibold text-gray-900">Telefone:</span> {viewModalData.telefone}</p>
                   </div>
                 </div>
@@ -610,8 +605,8 @@ export default function InscricoesPage() {
                     <p><span className="font-semibold text-gray-900">Pastor:</span> {viewModalData.pastor}</p>
                     <p><span className="font-semibold text-gray-900">Cargo:</span> {viewModalData.cargo || '-'}</p>
                     <p><span className="font-semibold text-gray-900">Função:</span> {viewModalData.funcao || '-'}</p>
-                    <p><span className="font-semibold text-gray-900">Data Batismo:</span> {viewModalData.data_batismo ? new Date(viewModalData.data_batismo).toLocaleDateString('pt-BR') : '-'}</p>
-                    <p><span className="font-semibold text-gray-900">Data Consagração:</span> {viewModalData.data_consagracao ? new Date(viewModalData.data_consagracao).toLocaleDateString('pt-BR') : '-'}</p>
+                    <p><span className="font-semibold text-gray-900">Data Batismo:</span> {formatDateISOToBR(viewModalData.data_batismo) || '-'}</p>
+                    <p><span className="font-semibold text-gray-900">Data Consagração:</span> {formatDateISOToBR(viewModalData.data_consagracao) || '-'}</p>
                   </div>
                 </div>
 

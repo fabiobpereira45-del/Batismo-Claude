@@ -25,6 +25,7 @@ interface FormData {
   cidade: string;
   estado: string;
   estado_civil: string;
+  nome_conjuge?: string;
 
   // Novos campos
   nome_pai?: string;
@@ -53,6 +54,7 @@ interface FormErrors {
   cidade?: string;
   estado?: string;
   estado_civil?: string;
+  nome_conjuge?: string;
 
   // Novos campos
   nome_pai?: string;
@@ -103,7 +105,9 @@ function parseDateBRToISO(dateBR: string): string {
 
 function formatDateISOToBR(dateISO: string | null | undefined): string {
   if (!dateISO) return "";
-  const parts = dateISO.split("-");
+  // Extrai somente a parte da data (antes do T ou espaço) para ignorar hora/fuso
+  const datePart = dateISO.split(/[T ]/)[0];
+  const parts = datePart.split("-");
   if (parts.length === 3) {
     return `${parts[2]}/${parts[1]}/${parts[0]}`;
   }
@@ -141,7 +145,7 @@ const igrejasData = [
   { nome: "ADMTN - CABULA VII", pastor: "Pb. Jeferson Guedes" },
   { nome: "ADMTN - CONJUNTO ACM", pastor: "PB. ISAC SOUZA" },
   { nome: "ADMTN - EDGARD SANTOS", pastor: "Pb. Marcos Almeida" },
-  { nome: "ADMTN - FINAL DE LINHA", pastor: "Pb. Ezequeil Mendes" },
+  { nome: "ADMTN - RUA PARAÍBA", pastor: "Pb. Ezequeil Mendes" },
   { nome: "ADMTN - NOVA VILA", pastor: "Pb. Francisco Marinho" },
   { nome: "ADMTN - RÓTULA I", pastor: "Pr. Joval Barreto" },
   { nome: "ADMTN - RÓTULA II", pastor: "Pb. Robison Adorno" },
@@ -149,7 +153,7 @@ const igrejasData = [
   { nome: "ADMTN - RUA SÃO GERÔNIMO", pastor: "Pr. Samuel Miranda" },
   { nome: "ADMTN - TANCREDO NEVES II", pastor: "Pr. Domingos Prado" },
   { nome: "ADMTN - TANCREDO NEVES III", pastor: "PB. Claudio de Jesus Silva" },
-  { nome: "ADMTN - TEMPLO CENTRAL", pastor: "Pr. Felipe Carvalho das Virgens" },
+  { nome: "ADMTN - TEMPLO SEDE SETORIAL", pastor: "Pr. André Gomes" },
   { nome: "ADMTN - VILA DOIS IRMÃOS", pastor: "PB. JONATAS FERREIRA" },
   { nome: "ADMTN - VILA MOISÉS", pastor: "Pb. Augusto Spinola" }
 ];
@@ -245,6 +249,7 @@ export default function FormularioBatismo() {
     cidade: "",
     estado: "",
     estado_civil: "",
+    nome_conjuge: "",
 
     nome_pai: "",
     nome_mae: "",
@@ -510,12 +515,13 @@ export default function FormularioBatismo() {
       }
     }
 
-    if (formData.cargo !== "Membro") {
+    const CARGOS_CONSAGRACAO = ["Diácono", "Presbítero", "Evangelista", "Pastor"];
+    if (CARGOS_CONSAGRACAO.includes(formData.cargo)) {
       if (!formData.data_consagracao || formData.data_consagracao.length !== 10) {
-        newErrors.data_consagracao = "Data de consagração é obrigatória";
+        newErrors.data_consagracao = "Data de consagração é obrigatória para este cargo";
       }
     } else {
-      if (formData.data_consagracao && formData.data_consagracao.length !== 10) {
+      if (formData.data_consagracao && formData.data_consagracao.length > 0 && formData.data_consagracao.length !== 10) {
         newErrors.data_consagracao = "Data de consagração inválida";
       }
     }
@@ -534,7 +540,13 @@ export default function FormularioBatismo() {
 
     if (!formData.cargo) newErrors.cargo = "Cargo é obrigatório";
     if (!formData.funcao) newErrors.funcao = "Função é obrigatória";
-    if (!formData.estado_civil) newErrors.estado_civil = "Estado civil é obrigatório";
+    if (!formData.estado_civil) {
+      newErrors.estado_civil = "Estado civil é obrigatório";
+    } else if (formData.estado_civil === "Casado") {
+      if (!formData.nome_conjuge || formData.nome_conjuge.trim().length < 3) {
+        newErrors.nome_conjuge = "Nome do cônjuge é obrigatório";
+      }
+    }
     
     if (!formData.cep || formData.cep.length !== 9) newErrors.cep = "CEP inválido";
     if (!formData.rua || formData.rua.trim().length < 2) newErrors.rua = "Rua é obrigatória";
@@ -602,6 +614,7 @@ export default function FormularioBatismo() {
       cidade: "",
       estado: "",
       estado_civil: "",
+      nome_conjuge: "",
       nome_pai: "",
       nome_mae: "",
       naturalidade: "",
@@ -673,6 +686,7 @@ export default function FormularioBatismo() {
         cidade: data.cidade || "",
         estado: data.estado || "",
         estado_civil: data.estado_civil || "",
+        nome_conjuge: data.nome_conjuge || "",
         nome_pai: data.nome_pai || "",
         nome_mae: data.nome_mae || "",
         naturalidade: data.naturalidade || "",
@@ -763,6 +777,7 @@ export default function FormularioBatismo() {
             cidade: formData.cidade.trim(),
             estado: formData.estado.trim(),
             estado_civil: formData.estado_civil,
+            nome_conjuge: formData.estado_civil === "Casado" ? (formData.nome_conjuge?.trim() || null) : null,
             nome_pai: formData.nome_pai?.trim() || null,
             nome_mae: formData.nome_mae.trim(),
             naturalidade: formData.naturalidade,
@@ -796,6 +811,7 @@ export default function FormularioBatismo() {
               cidade: formData.cidade.trim(),
               estado: formData.estado.trim(),
               estado_civil: formData.estado_civil,
+              nome_conjuge: formData.estado_civil === "Casado" ? (formData.nome_conjuge?.trim() || null) : null,
               nome_pai: formData.nome_pai?.trim() || null,
               nome_mae: formData.nome_mae.trim(),
               naturalidade: formData.naturalidade,
@@ -1275,6 +1291,7 @@ export default function FormularioBatismo() {
                     className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     <option value="">Selecione...</option>
+                    <option value="Apenas Membro">Apenas Membro</option>
                     <option value="Superintendente">Superintendente</option>
                     <option value="Vice">Vice</option>
                     <option value="Porteiro">Porteiro</option>
@@ -1315,7 +1332,7 @@ export default function FormularioBatismo() {
                     htmlFor="data_consagracao"
                     className="text-sm font-medium text-gray-700"
                   >
-                    Data de Consagração {formData.cargo !== "Membro" ? "*" : ""}
+                    Data de Consagração {["Diácono", "Presbítero", "Evangelista", "Pastor"].includes(formData.cargo) ? "*" : "(Opcional)"}
                   </label>
                   <Input
                     id="data_consagracao"
@@ -1325,8 +1342,7 @@ export default function FormularioBatismo() {
                     onChange={handleChange}
                     placeholder="DD/MM/AAAA"
                     maxLength={10}
-                    required={formData.cargo !== "Membro"}
-                    disabled={formData.cargo === "Membro"}
+                    required={["Diácono", "Presbítero", "Evangelista", "Pastor"].includes(formData.cargo)}
                   />
                   {errors.data_consagracao && (
                     <p className="text-sm text-red-600">{errors.data_consagracao}</p>
@@ -1381,6 +1397,25 @@ export default function FormularioBatismo() {
                     <p className="text-sm text-red-600">{errors.estado_civil}</p>
                   )}
                 </div>
+
+                {formData.estado_civil === "Casado" && (
+                  <div className={inputClass("nome_conjuge")}>
+                    <label htmlFor="nome_conjuge" className="text-sm font-medium text-gray-700">
+                      Nome do Cônjuge *
+                    </label>
+                    <Input
+                      id="nome_conjuge"
+                      name="nome_conjuge"
+                      value={formData.nome_conjuge || ""}
+                      onChange={handleChange}
+                      placeholder="Nome completo do cônjuge"
+                      required
+                    />
+                    {errors.nome_conjuge && (
+                      <p className="text-sm text-red-600">{errors.nome_conjuge}</p>
+                    )}
+                  </div>
+                )}
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

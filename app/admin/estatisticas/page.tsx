@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
+import { calcularIdade } from '@/lib/utils';
 import {
   BarChart,
   Bar,
@@ -59,16 +60,7 @@ export default function EstatisticasPage() {
     }
   }, [user]);
 
-  const calcularIdade = (dataNascimento: string) => {
-    const hoje = new Date();
-    const nascimento = new Date(dataNascimento);
-    let idade = hoje.getFullYear() - nascimento.getFullYear();
-    const mesDiff = hoje.getMonth() - nascimento.getMonth();
-    if (mesDiff < 0 || (mesDiff === 0 && hoje.getDate() < nascimento.getDate())) {
-      idade--;
-    }
-    return Math.max(0, idade); // evita idades negativas caso algo venha errado
-  };
+
 
   const processDataForChart = (data: Inscricao[], key: keyof Inscricao) => {
     const counts: Record<string, number> = {};
@@ -100,7 +92,8 @@ export default function EstatisticasPage() {
         // Calcular média de idade
         const totalIdades = inscricoes.reduce((acc, curr) => {
            if (curr.data_nascimento) {
-             return acc + calcularIdade(curr.data_nascimento);
+             const idade = calcularIdade(curr.data_nascimento);
+             return acc + (typeof idade === 'number' ? idade : 0);
            }
            return acc;
         }, 0);

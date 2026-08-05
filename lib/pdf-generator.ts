@@ -1,5 +1,6 @@
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import { formatDateISOToBR, calcularIdade } from './utils';
 
 interface Inscricao {
   nome: string;
@@ -27,6 +28,7 @@ interface Inscricao {
   rg?: string;
   data_batismo?: string;
   foto_url?: string;
+  nome_conjuge?: string;
 }
 
 export function generatePDF(inscricoes: Inscricao[], filtros?: {
@@ -52,7 +54,7 @@ export function generatePDF(inscricoes: Inscricao[], filtros?: {
   doc.setFontSize(20);
   doc.text('Igreja Assembléia de Deus', 148, 20, { align: 'center' });
   doc.setFontSize(16);
-  doc.text('Ministério Tancredo Neves', 148, 30, { align: 'center' });
+  doc.text('Setor Tancredo Neves', 148, 30, { align: 'center' });
   
   doc.setFontSize(14);
   doc.text('Relatório - Cadastro de Membros e Obreiros', 148, 45, { align: 'center' });
@@ -103,18 +105,10 @@ export function generatePDF(inscricoes: Inscricao[], filtros?: {
   ];
   
   const data = inscricoes.map((inscricao) => {
-    const hoje = new Date();
     let idadeStr = '-';
     if (inscricao.data_nascimento) {
-      const nascimento = new Date(inscricao.data_nascimento);
-      if (!isNaN(nascimento.getTime())) {
-        let idadeNum = hoje.getFullYear() - nascimento.getFullYear();
-        const mesDiff = hoje.getMonth() - nascimento.getMonth();
-        if (mesDiff < 0 || (mesDiff === 0 && hoje.getDate() < nascimento.getDate())) {
-          idadeNum--;
-        }
-        idadeStr = `${nascimento.toLocaleDateString('pt-BR')} (${idadeNum} ANOS)`;
-      }
+      const idadeNum = calcularIdade(inscricao.data_nascimento);
+      idadeStr = `${formatDateISOToBR(inscricao.data_nascimento)} (${idadeNum} ANOS)`;
     }
     
     const enderecoFormatado = inscricao.cidade ? `${inscricao.cidade}/${inscricao.estado}`.toUpperCase() : '';
@@ -127,10 +121,7 @@ export function generatePDF(inscricoes: Inscricao[], filtros?: {
     const cargoFuncaoTexto = [cargoFormatado, funcaoFormatada].filter(Boolean).join(' - ') || '-';
     let consagracao = '';
     if (inscricao.data_consagracao) {
-      const dataCons = new Date(inscricao.data_consagracao);
-      if (!isNaN(dataCons.getTime())) {
-        consagracao = `\nCONSAGRADO EM: ${dataCons.toLocaleDateString('pt-BR')}`;
-      }
+      consagracao = `\nCONSAGRADO EM: ${formatDateISOToBR(inscricao.data_consagracao)}`;
     }
     const cargoEFuncaoEConsagracao = cargoFuncaoTexto + consagracao;
     const igrejaPastor = [igrejaFormatada, pastorFormatado].filter(Boolean).join('\n');
@@ -195,7 +186,7 @@ export async function generateIndividualPDF(inscricao: Inscricao) {
   doc.setFontSize(20);
   doc.text('Igreja Assembléia de Deus', 105, 20, { align: 'center' });
   doc.setFontSize(16);
-  doc.text('Ministério Tancredo Neves', 105, 30, { align: 'center' });
+  doc.text('Setor Tancredo Neves', 105, 30, { align: 'center' });
   
   doc.setFontSize(14);
   doc.text('Ficha Individual de Membro/Obreiro', 105, 45, { align: 'center' });
@@ -254,23 +245,18 @@ export async function generateIndividualPDF(inscricao: Inscricao) {
   addField('CPF', inscricao.cpf);
   addField('RG', inscricao.rg ? inscricao.rg.toUpperCase() : '-');
   
-  const hoje = new Date();
   let idadeInfo = '-';
   if (inscricao.data_nascimento) {
-    const nascimento = new Date(inscricao.data_nascimento);
-    if (!isNaN(nascimento.getTime())) {
-      let idade = hoje.getFullYear() - nascimento.getFullYear();
-      const m = hoje.getMonth() - nascimento.getMonth();
-      if (m < 0 || (m === 0 && hoje.getDate() < nascimento.getDate())) {
-        idade--;
-      }
-      idadeInfo = `${nascimento.toLocaleDateString('pt-BR')} (${idade} anos)`;
-    }
+    const idade = calcularIdade(inscricao.data_nascimento);
+    idadeInfo = `${formatDateISOToBR(inscricao.data_nascimento)} (${idade} anos)`;
   }
 
   addField('Data de Nascimento', idadeInfo);
   addField('Naturalidade', inscricao.naturalidade ? inscricao.naturalidade.toUpperCase() : '-');
   addField('Estado Civil', inscricao.estado_civil ? inscricao.estado_civil.toUpperCase() : '-');
+  if (inscricao.estado_civil === 'Casado' || inscricao.nome_conjuge) {
+    addField('Cônjuge', inscricao.nome_conjuge ? inscricao.nome_conjuge.toUpperCase() : '-');
+  }
   addField('Telefone', inscricao.telefone);
 
   y += 5;
@@ -282,24 +268,10 @@ export async function generateIndividualPDF(inscricao: Inscricao) {
   addField('Cargo', inscricao.cargo ? inscricao.cargo.toUpperCase() : '');
   addField('Função', inscricao.funcao ? inscricao.funcao.toUpperCase() : '');
   
-  if (inscricao.data_batismo) {
-    const dataBat = new Date(inscricao.data_batismo);
-    if (!isNaN(dataBat.getTime())) {
-      addField('Data de Batismo', dataBat.toLocaleDateString('pt-BR'));
-    } else {
-      addField('Data de Batismo', '-');
-    }
-  } else {
-    addField('Data de Batismo', '-');
-  }
+  addField('Data de Batismo', formatDateISOToBR(inscricao.data_batismo) || '-');
 
   if (inscricao.data_consagracao) {
-    const dataCons = new Date(inscricao.data_consagracao);
-    if (!isNaN(dataCons.getTime())) {
-      addField('Data Consagração', dataCons.toLocaleDateString('pt-BR'));
-    } else {
-      addField('Data Consagração', '-');
-    }
+    addField('Data Consagração', formatDateISOToBR(inscricao.data_consagracao) || '-');
   }
 
   y += 5;

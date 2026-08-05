@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { useAuth } from '@/lib/auth-context';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { formatDateISOToBR } from '@/lib/utils';
 
 interface PerfilUsuario {
   id: string;
@@ -123,7 +124,7 @@ export default function UsuariosPage() {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="text-sm text-gray-500">
-                      {new Date(u.created_at).toLocaleDateString('pt-BR')}
+                      {formatDateISOToBR(u.created_at)}
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">

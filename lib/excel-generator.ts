@@ -1,4 +1,5 @@
 import * as XLSX from 'xlsx';
+import { formatDateISOToBR, calcularIdade } from './utils';
 
 interface Inscricao {
   nome: string;
@@ -17,6 +18,7 @@ interface Inscricao {
   cidade: string;
   estado: string;
   estado_civil: string;
+  nome_conjuge?: string;
   nome_pai?: string;
   nome_mae?: string;
   naturalidade?: string;
@@ -33,6 +35,7 @@ export function generateExcel(inscricoes: Inscricao[]) {
     'Data de Nascimento',
     'Idade',
     'Estado Civil',
+    'Nome do Cônjuge',
     'Telefone',
     'Nome do Pai',
     'Nome da Mãe',
@@ -53,35 +56,16 @@ export function generateExcel(inscricoes: Inscricao[]) {
   ];
 
   const rows = inscricoes.map((inscricao) => {
-    const calcularIdade = (dataNasc: string) => {
-      if (!dataNasc) return '';
-      const hoje = new Date();
-      const nascimento = new Date(dataNasc);
-      if (isNaN(nascimento.getTime())) return '';
-      let idade = hoje.getFullYear() - nascimento.getFullYear();
-      const mesDiff = hoje.getMonth() - nascimento.getMonth();
-      if (mesDiff < 0 || (mesDiff === 0 && hoje.getDate() < nascimento.getDate())) {
-        idade--;
-      }
-      return idade;
-    };
-
-    const formatarData = (dataStr?: string) => {
-      if (!dataStr) return '';
-      const data = new Date(dataStr);
-      if (isNaN(data.getTime())) return '';
-      return data.toLocaleDateString('pt-BR');
-    };
-
     const idadeVal = calcularIdade(inscricao.data_nascimento);
 
     return {
       'Nome Completo': inscricao.nome?.toUpperCase() || '',
       'CPF': inscricao.cpf || '',
       'RG': inscricao.rg?.toUpperCase() || '',
-      'Data de Nascimento': formatarData(inscricao.data_nascimento),
+      'Data de Nascimento': formatDateISOToBR(inscricao.data_nascimento),
       'Idade': idadeVal !== '' ? Number(idadeVal) : '',
       'Estado Civil': inscricao.estado_civil?.toUpperCase() || '',
+      'Nome do Cônjuge': inscricao.nome_conjuge?.toUpperCase() || '',
       'Telefone': inscricao.telefone || '',
       'Nome do Pai': inscricao.nome_pai?.toUpperCase() || '',
       'Nome da Mãe': inscricao.nome_mae?.toUpperCase() || '',
@@ -96,9 +80,9 @@ export function generateExcel(inscricoes: Inscricao[]) {
       'Pastor': inscricao.pastor?.toUpperCase() || '',
       'Cargo': inscricao.cargo?.toUpperCase() || '',
       'Função': inscricao.funcao?.toUpperCase() || '',
-      'Data de Batismo': formatarData(inscricao.data_batismo),
-      'Data de Consagração': formatarData(inscricao.data_consagracao),
-      'Data de Cadastro': formatarData(inscricao.created_at),
+      'Data de Batismo': formatDateISOToBR(inscricao.data_batismo),
+      'Data de Consagração': formatDateISOToBR(inscricao.data_consagracao),
+      'Data de Cadastro': formatDateISOToBR(inscricao.created_at),
     };
   });
 

@@ -6,8 +6,8 @@ import { AuthProvider } from "@/lib/auth-context";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Cadastro de Membros e Obreiros - AD Ministério Tancredo Neves",
-  description: "Formulário de cadastro de membros e obreiros da Igreja Assembléa de Deus Ministério Tancredo Neves",
+  title: "Cadastro de Membros e Obreiros - AD Setor Tancredo Neves",
+  description: "Formulário de cadastro de membros e obreiros da Igreja Assembleia de Deus Setor Tancredo Neves",
 };
 
 export default function RootLayout({

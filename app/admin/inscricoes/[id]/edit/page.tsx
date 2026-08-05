@@ -25,6 +25,7 @@ interface Inscricao {
   cidade: string;
   estado: string;
   estado_civil: string;
+  nome_conjuge?: string;
 }
 
 const igrejasData = [
@@ -34,7 +35,7 @@ const igrejasData = [
   { nome: "ADMTN - CABULA VII", pastor: "Pb. Jeferson Guedes" },
   { nome: "ADMTN - CONJUNTO ACM", pastor: "PB. ISAC SOUZA" },
   { nome: "ADMTN - EDGARD SANTOS", pastor: "Pb. Marcos Almeida" },
-  { nome: "ADMTN - FINAL DE LINHA", pastor: "Pb. Ezequeil Mendes" },
+  { nome: "ADMTN - RUA PARAÍBA", pastor: "Pb. Ezequeil Mendes" },
   { nome: "ADMTN - NOVA VILA", pastor: "Pb. Francisco Marinho" },
   { nome: "ADMTN - RÓTULA I", pastor: "Pr. Joval Barreto" },
   { nome: "ADMTN - RÓTULA II", pastor: "Pb. Robison Adorno" },
@@ -42,7 +43,7 @@ const igrejasData = [
   { nome: "ADMTN - RUA SÃO GERÔNIMO", pastor: "Pr. Samuel Miranda" },
   { nome: "ADMTN - TANCREDO NEVES II", pastor: "Pr. Domingos Prado" },
   { nome: "ADMTN - TANCREDO NEVES III", pastor: "PB. Claudio de Jesus Silva" },
-  { nome: "ADMTN - TEMPLO CENTRAL", pastor: "Pr. Felipe Carvalho das Virgens" },
+  { nome: "ADMTN - TEMPLO SEDE SETORIAL", pastor: "Pr. André Gomes" },
   { nome: "ADMTN - VILA DOIS IRMÃOS", pastor: "PB. JONATAS FERREIRA" },
   { nome: "ADMTN - VILA MOISÉS", pastor: "Pb. Augusto Spinola" }
 ];
@@ -63,9 +64,11 @@ function parseDateBRToISO(dateBR: string): string {
   return dateBR;
 }
 
-function formatDateISOToBR(dateISO: string): string {
-  if (!dateISO) return dateISO;
-  const parts = dateISO.split('-');
+function formatDateISOToBR(dateISO: string | null | undefined): string {
+  if (!dateISO) return "";
+  // Extrai somente a parte da data (antes do T ou espaço) para ignorar hora/fuso
+  const datePart = dateISO.split(/[T ]/)[0];
+  const parts = datePart.split('-');
   if (parts.length === 3) {
     return `${parts[2]}/${parts[1]}/${parts[0]}`;
   }
@@ -96,6 +99,7 @@ export default function EditarInscricaoPage({ params }: { params: { id: string }
     cidade: '',
     estado: '',
     estado_civil: '',
+    nome_conjuge: '',
   });
 
   useEffect(() => {
@@ -135,6 +139,7 @@ export default function EditarInscricaoPage({ params }: { params: { id: string }
           cidade: data.cidade || '',
           estado: data.estado || '',
           estado_civil: data.estado_civil || '',
+          nome_conjuge: data.nome_conjuge || '',
         });
       }
     } catch (err: any) {
@@ -220,6 +225,7 @@ export default function EditarInscricaoPage({ params }: { params: { id: string }
           cidade: formData.cidade,
           estado: formData.estado,
           estado_civil: formData.estado_civil,
+          nome_conjuge: formData.estado_civil === "Casado" ? (formData.nome_conjuge || null) : null,
         })
         .eq('id', formData.id);
 
@@ -300,7 +306,7 @@ export default function EditarInscricaoPage({ params }: { params: { id: string }
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Data de Consagração
+              Data de Consagração {["Diácono", "Presbítero", "Evangelista", "Pastor"].includes(formData.cargo) ? "*" : "(Opcional)"}
             </label>
             <Input
               name="data_consagracao"
@@ -309,6 +315,7 @@ export default function EditarInscricaoPage({ params }: { params: { id: string }
               onChange={handleChange}
               placeholder="DD/MM/AAAA"
               maxLength={10}
+              required={["Diácono", "Presbítero", "Evangelista", "Pastor"].includes(formData.cargo)}
             />
           </div>
 
@@ -354,8 +361,6 @@ export default function EditarInscricaoPage({ params }: { params: { id: string }
             />
           </div>
 
-
-
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Cargo</label>
@@ -373,6 +378,7 @@ export default function EditarInscricaoPage({ params }: { params: { id: string }
               <label className="block text-sm font-medium text-gray-700 mb-1">Função</label>
               <select name="funcao" value={formData.funcao} onChange={handleChange} className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50">
                 <option value="">Selecione...</option>
+                <option value="Apenas Membro">Apenas Membro</option>
                 <option value="Superintendente">Superintendente</option>
                 <option value="Vice">Vice</option>
                 <option value="Porteiro">Porteiro</option>
@@ -387,8 +393,15 @@ export default function EditarInscricaoPage({ params }: { params: { id: string }
                 <option value="Solteiro">Solteiro(a)</option>
                 <option value="Casado">Casado(a)</option>
                 <option value="Divorciado">Divorciado(a)</option>
+                <option value="Viuvo">Viúvo(a)</option>
               </select>
             </div>
+            {formData.estado_civil === "Casado" && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Nome do Cônjuge *</label>
+                <Input name="nome_conjuge" value={formData.nome_conjuge || ''} onChange={handleChange} placeholder="Nome completo do cônjuge" required />
+              </div>
+            )}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">CEP</label>
               <Input name="cep" value={formData.cep} onChange={handleChange} />
