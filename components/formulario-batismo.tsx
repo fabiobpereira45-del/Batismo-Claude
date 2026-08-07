@@ -748,6 +748,9 @@ export default function FormularioBatismo() {
           });
           
         if (uploadError) {
+          if (uploadError.message?.toLowerCase().includes("row-level security") || uploadError.message?.toLowerCase().includes("rls") || uploadError.message?.toLowerCase().includes("violates")) {
+            throw new Error(`Erro no Upload: Permissão negada no Supabase Storage (RLS). Execute o script SQL fix_storage_rls.sql no Supabase. Detalhes: ${uploadError.message}`);
+          }
           throw new Error(`Erro no upload: ${uploadError.message}`);
         }
         
