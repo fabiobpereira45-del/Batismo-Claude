@@ -825,10 +825,10 @@ export default function FormularioBatismo() {
           ]);
         
         if (supabaseError) {
-          if (supabaseError.message.includes("duplicate key")) {
+          if (supabaseError.message?.includes("duplicate key")) {
             setError("Este CPF já está cadastrado.");
           } else {
-            setError("Erro ao salvar inscrição. Tente novamente.");
+            setError(`Erro ao salvar no banco: ${supabaseError.message}`);
           }
           return;
         }
