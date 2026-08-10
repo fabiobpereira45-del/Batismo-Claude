@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { CIDADES_BAHIA } from "@/lib/cidades-bahia";
+import { isValidBRDate, parseDateBRToISO, formatDateISOToBR } from "@/lib/utils";
 
 interface FormData {
   nome: string;
@@ -94,25 +95,6 @@ function formatData(value: string): string {
   return `${digits.slice(0, 2)}/${digits.slice(2, 4)}/${digits.slice(4, 8)}`;
 }
 
-function parseDateBRToISO(dateBR: string): string {
-  if (!dateBR) return dateBR;
-  const parts = dateBR.split('/');
-  if (parts.length === 3 && parts[2].length === 4) {
-    return `${parts[2]}-${parts[1]}-${parts[0]}`;
-  }
-  return dateBR;
-}
-
-function formatDateISOToBR(dateISO: string | null | undefined): string {
-  if (!dateISO) return "";
-  // Extrai somente a parte da data (antes do T ou espaço) para ignorar hora/fuso
-  const datePart = dateISO.split(/[T ]/)[0];
-  const parts = datePart.split("-");
-  if (parts.length === 3) {
-    return `${parts[2]}/${parts[1]}/${parts[0]}`;
-  }
-  return dateISO;
-}
 
 function validateCPF(cpf: string): boolean {
   const digits = cpf.replace(/\D/g, "");
@@ -507,10 +489,14 @@ export default function FormularioBatismo() {
     }
     
     if (!formData.data_nascimento || formData.data_nascimento.length !== 10) {
-      newErrors.data_nascimento = "Data de nascimento inválida";
+      newErrors.data_nascimento = "Data de nascimento inválida (use o formato DD/MM/AAAA)";
+    } else if (!isValidBRDate(formData.data_nascimento)) {
+      newErrors.data_nascimento = "Data inválida. Digite dia (01-31), mês (01-12) e ano (ex: 2000) válidos.";
     } else {
       const birthDate = new Date(parseDateBRToISO(formData.data_nascimento) + "T00:00:00");
-      if (birthDate >= today) {
+      if (isNaN(birthDate.getTime())) {
+        newErrors.data_nascimento = "Data de nascimento inválida";
+      } else if (birthDate >= today) {
         newErrors.data_nascimento = "Data de nascimento deve ser anterior a hoje";
       }
     }
@@ -519,10 +505,14 @@ export default function FormularioBatismo() {
     if (CARGOS_CONSAGRACAO.includes(formData.cargo)) {
       if (!formData.data_consagracao || formData.data_consagracao.length !== 10) {
         newErrors.data_consagracao = "Data de consagração é obrigatória para este cargo";
+      } else if (!isValidBRDate(formData.data_consagracao)) {
+        newErrors.data_consagracao = "Data de consagração inválida. Digite dia (01-31), mês (01-12) e ano válidos.";
       }
     } else {
-      if (formData.data_consagracao && formData.data_consagracao.length > 0 && formData.data_consagracao.length !== 10) {
-        newErrors.data_consagracao = "Data de consagração inválida";
+      if (formData.data_consagracao && formData.data_consagracao.length > 0) {
+        if (formData.data_consagracao.length !== 10 || !isValidBRDate(formData.data_consagracao)) {
+          newErrors.data_consagracao = "Data de consagração inválida (use DD/MM/AAAA).";
+        }
       }
     }
     
@@ -566,7 +556,9 @@ export default function FormularioBatismo() {
       newErrors.rg = "RG é obrigatório";
     }
     if (!formData.data_batismo || formData.data_batismo.length !== 10) {
-      newErrors.data_batismo = "Data de batismo é obrigatória";
+      newErrors.data_batismo = "Data de batismo é obrigatória (use DD/MM/AAAA)";
+    } else if (!isValidBRDate(formData.data_batismo)) {
+      newErrors.data_batismo = "Data de batismo inválida. Digite dia (01-31), mês (01-12) e ano válidos.";
     }
     if (!fotoPreview) {
       newErrors.foto = "Foto do membro é obrigatória";
@@ -827,6 +819,11 @@ export default function FormularioBatismo() {
         if (supabaseError) {
           if (supabaseError.message?.includes("duplicate key")) {
             setError("Este CPF já está cadastrado.");
+          } else if (
+            supabaseError.message?.toLowerCase().includes("date/time field value out of range") ||
+            supabaseError.message?.toLowerCase().includes("invalid input syntax for type date")
+          ) {
+            setError("Erro ao salvar no banco: Data inválida ou fora do intervalo permitido. Verifique se o dia (01-31), mês (01-12) e ano (ex: 2000) estão corretos.");
           } else {
             setError(`Erro ao salvar no banco: ${supabaseError.message}`);
           }
@@ -836,7 +833,14 @@ export default function FormularioBatismo() {
       
       setSuccess(true);
     } catch (err: any) {
-      setError(err.message || "Erro ao conectar com o banco de dados.");
+      let msg = err.message || "Erro ao conectar com o banco de dados.";
+      if (
+        msg.toLowerCase().includes("date/time field value out of range") ||
+        msg.toLowerCase().includes("invalid input syntax for type date")
+      ) {
+        msg = "Erro ao salvar no banco: Data inválida ou fora do intervalo permitido. Verifique se o dia (01-31), mês (01-12) e ano estão corretos.";
+      }
+      setError(msg);
     } finally {
       setLoading(false);
     }
@@ -845,7 +849,7 @@ export default function FormularioBatismo() {
   if (success) {
     return (
       <Card className="border-0 shadow-2xl shadow-indigo-200/50 bg-white/80 backdrop-blur-xl rounded-3xl overflow-hidden">
-        <CardContent className="p-4 sm:p-10">
+        <CardContent className="p-3.5 sm:p-8 md:p-10">
           <div className="text-center py-8">
             <div className="text-5xl mb-4">🎉</div>
             <h2 className="text-2xl font-semibold text-green-600 mb-2">
@@ -898,7 +902,7 @@ export default function FormularioBatismo() {
         </div>
       )}
 
-      <CardContent className="p-4 sm:p-10">
+      <CardContent className="p-3.5 sm:p-8 md:p-10">
         {modoBusca ? (
           <form
             onSubmit={(e) => {
@@ -1157,7 +1161,7 @@ export default function FormularioBatismo() {
                       name="estado_naturalidade"
                       value={estadoNaturalidade}
                       onChange={handleEstadoNaturalidadeChange}
-                      className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                      className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-base sm:text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                     >
                       {ESTADOS_BRASILEIROS.map((est) => (
                         <option key={est.sigla} value={est.sigla}>
@@ -1174,7 +1178,7 @@ export default function FormularioBatismo() {
                       onChange={handleChange}
                       required
                       disabled={carregandoCidades}
-                      className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                      className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-base sm:text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                     >
                       <option value="">
                         {carregandoCidades ? "Carregando..." : "Selecione a cidade..."}
@@ -1225,7 +1229,7 @@ export default function FormularioBatismo() {
                     value={formData.igreja}
                     onChange={handleChange}
                     required
-                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-base sm:text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     <option value="">Selecione a igreja...</option>
                     {igrejasData.map((i) => (
@@ -1266,7 +1270,7 @@ export default function FormularioBatismo() {
                     value={formData.cargo}
                     onChange={handleChange}
                     required
-                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-base sm:text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     <option value="">Selecione...</option>
                     <option value="Membro">Membro</option>
@@ -1291,7 +1295,7 @@ export default function FormularioBatismo() {
                     value={formData.funcao}
                     onChange={handleChange}
                     required
-                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-base sm:text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     <option value="">Selecione...</option>
                     <option value="Apenas Membro">Apenas Membro</option>
@@ -1388,7 +1392,7 @@ export default function FormularioBatismo() {
                     value={formData.estado_civil}
                     onChange={handleChange}
                     required
-                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-base sm:text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     <option value="">Selecione...</option>
                     <option value="Solteiro">Solteiro(a)</option>

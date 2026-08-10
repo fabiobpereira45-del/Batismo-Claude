@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { isValidBRDate, parseDateBRToISO, formatDateISOToBR } from '@/lib/utils';
 
 interface Inscricao {
   id: string;
@@ -55,25 +56,6 @@ function formatData(value: string): string {
   return `${digits.slice(0, 2)}/${digits.slice(2, 4)}/${digits.slice(4, 8)}`;
 }
 
-function parseDateBRToISO(dateBR: string): string {
-  if (!dateBR) return dateBR;
-  const parts = dateBR.split('/');
-  if (parts.length === 3 && parts[2].length === 4) {
-    return `${parts[2]}-${parts[1]}-${parts[0]}`;
-  }
-  return dateBR;
-}
-
-function formatDateISOToBR(dateISO: string | null | undefined): string {
-  if (!dateISO) return "";
-  // Extrai somente a parte da data (antes do T ou espaço) para ignorar hora/fuso
-  const datePart = dateISO.split(/[T ]/)[0];
-  const parts = datePart.split('-');
-  if (parts.length === 3) {
-    return `${parts[2]}/${parts[1]}/${parts[0]}`;
-  }
-  return dateISO;
-}
 
 export default function EditarInscricaoPage({ params }: { params: { id: string } }) {
   const router = useRouter();
@@ -201,8 +183,19 @@ export default function EditarInscricaoPage({ params }: { params: { id: string }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setSaving(true);
     setError(null);
+
+    if (formData.data_nascimento && !isValidBRDate(formData.data_nascimento)) {
+      setError("Data de nascimento inválida. Digite no formato DD/MM/AAAA com dia (01-31), mês (01-12) e ano válidos.");
+      return;
+    }
+
+    if (formData.data_consagracao && !isValidBRDate(formData.data_consagracao)) {
+      setError("Data de consagração inválida. Digite no formato DD/MM/AAAA com dia (01-31), mês (01-12) e ano válidos.");
+      return;
+    }
+
+    setSaving(true);
 
     try {
       const { error } = await supabase
@@ -234,7 +227,14 @@ export default function EditarInscricaoPage({ params }: { params: { id: string }
       alert('Inscrição atualizada com sucesso!');
       router.push('/admin/inscricoes');
     } catch (err: any) {
-      setError(err.message);
+      let msg = err.message || "Erro ao salvar alterações.";
+      if (
+        msg.toLowerCase().includes("date/time field value out of range") ||
+        msg.toLowerCase().includes("invalid input syntax for type date")
+      ) {
+        msg = "Erro ao salvar no banco: Data inválida ou fora do intervalo permitido. Verifique as datas preenchidas.";
+      }
+      setError(msg);
     } finally {
       setSaving(false);
     }
