@@ -70,3 +70,45 @@ INSERT INTO public.perfil_usuarios (id, email, status, role)
 SELECT id, email, 'aprovado', 'master'
 FROM auth.users
 ON CONFLICT (id) DO NOTHING;
+
+-- 6. Função para permitir que usuários Master alterem a senha de qualquer usuário
+CREATE OR REPLACE FUNCTION public.alterar_senha_usuario(usuario_id uuid, nova_senha text)
+RETURNS json
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public, auth, extensions
+AS $$
+DECLARE
+  v_is_master BOOLEAN;
+BEGIN
+  -- Verifica se quem está logado possui a role 'master'
+  SELECT EXISTS (
+    SELECT 1 FROM public.perfil_usuarios 
+    WHERE id = auth.uid() AND role = 'master'
+  ) INTO v_is_master;
+
+  IF NOT v_is_master THEN
+    RAISE EXCEPTION 'Acesso negado: Apenas usuários Master podem alterar senhas.';
+  END IF;
+
+  -- Valida tamanho mínimo da nova senha
+  IF length(nova_senha) < 6 THEN
+    RAISE EXCEPTION 'A nova senha deve ter no mínimo 6 caracteres.';
+  END IF;
+
+  -- Atualiza o hash da senha diretamente na tabela auth.users
+  UPDATE auth.users
+  SET encrypted_password = extensions.crypt(nova_senha, extensions.gen_salt('bf')),
+      updated_at = now()
+  WHERE id = usuario_id;
+
+  IF NOT FOUND THEN
+    RAISE EXCEPTION 'Usuário não encontrado.';
+  END IF;
+
+  RETURN json_build_object('success', true, 'message', 'Senha alterada com sucesso.');
+END;
+$$;
+
+GRANT EXECUTE ON FUNCTION public.alterar_senha_usuario(uuid, text) TO authenticated;
+
