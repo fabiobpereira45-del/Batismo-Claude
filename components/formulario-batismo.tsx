@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { CIDADES_BAHIA } from "@/lib/cidades-bahia";
 import { isValidBRDate, parseDateBRToISO, formatDateISOToBR } from "@/lib/utils";
+import { compressImage } from "@/lib/image-compressor";
 
 interface FormData {
   nome: string;
@@ -250,6 +251,7 @@ export default function FormularioBatismo() {
   const streamRef = useRef<MediaStream | null>(null);
   const [fotoFile, setFotoFile] = useState<File | Blob | null>(null);
   const [fotoPreview, setFotoPreview] = useState<string | null>(null);
+  const [comprimindoFoto, setComprimindoFoto] = useState(false);
   const [facingMode, setFacingMode] = useState<'user' | 'environment'>('user');
 
   const [estadoNaturalidade, setEstadoNaturalidade] = useState<string>("BA");
@@ -383,7 +385,7 @@ export default function FormularioBatismo() {
     setCameraAtiva(false);
   };
 
-  const capturarFoto = () => {
+  const capturarFoto = async () => {
     const video = videoRef.current;
     const canvas = canvasRef.current;
     if (video && canvas) {
@@ -404,11 +406,21 @@ export default function FormularioBatismo() {
           ctx.setTransform(1, 0, 0, 1, 0, 0); // reset
         }
         
-        canvas.toBlob((blob) => {
+        canvas.toBlob(async (blob) => {
           if (blob) {
-            const file = new File([blob], `selfie-${Date.now()}.jpg`, { type: 'image/jpeg' });
-            setFotoFile(file);
-            setFotoPreview(canvas.toDataURL('image/jpeg'));
+            try {
+              setComprimindoFoto(true);
+              const compressed = await compressImage(blob, { maxWidth: 800, maxHeight: 800, quality: 0.8 });
+              setFotoFile(compressed.file);
+              setFotoPreview(compressed.dataUrl);
+            } catch (err) {
+              console.error("Erro ao comprimir captura:", err);
+              const file = new File([blob], `selfie-${Date.now()}.jpg`, { type: 'image/jpeg' });
+              setFotoFile(file);
+              setFotoPreview(canvas.toDataURL('image/jpeg'));
+            } finally {
+              setComprimindoFoto(false);
+            }
           }
         }, 'image/jpeg', 0.95);
         
@@ -417,15 +429,25 @@ export default function FormularioBatismo() {
     }
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      setFotoFile(file);
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setFotoPreview(reader.result as string);
-      };
-      reader.readAsDataURL(file);
+      try {
+        setComprimindoFoto(true);
+        const compressed = await compressImage(file, { maxWidth: 800, maxHeight: 800, quality: 0.8 });
+        setFotoFile(compressed.file);
+        setFotoPreview(compressed.dataUrl);
+      } catch (err) {
+        console.error("Erro ao comprimir imagem:", err);
+        setFotoFile(file);
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          setFotoPreview(reader.result as string);
+        };
+        reader.readAsDataURL(file);
+      } finally {
+        setComprimindoFoto(false);
+      }
     }
   };
 
@@ -718,22 +740,33 @@ export default function FormularioBatismo() {
     try {
       let uploadedFotoUrl = formData.foto_url || "";
       if (fotoFile) {
+        // Garantir compressão preventiva antes do envio
+        let fileToUpload = fotoFile;
+        if (fotoFile.size > 200 * 1024) {
+          try {
+            const compressed = await compressImage(fotoFile, { maxWidth: 800, maxHeight: 800, quality: 0.8 });
+            fileToUpload = compressed.file;
+          } catch (compressErr) {
+            console.warn("Falha no fallback de compressão:", compressErr);
+          }
+        }
+
         const cpfLimpo = formData.cpf.replace(/\D/g, "");
         let fileExt = "jpg";
         let contentType = "image/jpeg";
-        if (fotoFile instanceof File) {
-          const parts = fotoFile.name.split('.');
+        if (fileToUpload instanceof File) {
+          const parts = fileToUpload.name.split('.');
           if (parts.length > 1) {
             fileExt = parts.pop()?.toLowerCase() || "jpg";
           }
-          contentType = fotoFile.type || "image/jpeg";
+          contentType = fileToUpload.type || "image/jpeg";
         }
         const fileName = `${cpfLimpo}-${Date.now()}.${fileExt}`;
         const filePath = `membros/${fileName}`;
         
         const { error: uploadError } = await supabase.storage
           .from('fotos-membros')
-          .upload(filePath, fotoFile, {
+          .upload(filePath, fileToUpload, {
             cacheControl: '3600',
             upsert: true,
             contentType: contentType
@@ -976,6 +1009,12 @@ export default function FormularioBatismo() {
             </label>
             <div className="flex flex-col sm:flex-row items-center gap-6 bg-slate-50 p-4 rounded-2xl border border-slate-100">
               <div className="relative w-40 h-48 bg-slate-200 border-2 border-dashed border-slate-300 rounded-xl overflow-hidden flex items-center justify-center shadow-inner">
+                {comprimindoFoto && (
+                  <div className="absolute inset-0 bg-black/60 backdrop-blur-[2px] flex flex-col items-center justify-center text-white z-10">
+                    <div className="animate-spin rounded-full h-7 w-7 border-2 border-white border-t-transparent mb-1.5" />
+                    <span className="text-[11px] font-medium tracking-wide">Otimizando foto...</span>
+                  </div>
+                )}
                 {fotoPreview ? (
                   <img src={fotoPreview} alt="Preview do Membro" className="w-full h-full object-cover" />
                 ) : cameraAtiva ? (
