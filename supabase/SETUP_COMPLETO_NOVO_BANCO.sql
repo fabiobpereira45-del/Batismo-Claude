@@ -1,7 +1,7 @@
 -- ==============================================================================
 -- SETUP COMPLETO PARA O NOVO PROJETO SUPABASE
 -- Execute este script completo no SQL Editor do seu novo projeto Supabase:
--- https://supabase.com/dashboard/project/vppembhvrlqountgdigj/sql/new
+-- https://supabase.com/dashboard/project/dwqfpoflkvfriyeqhdjw/sql/new
 -- ==============================================================================
 
 -- 0. Habilitar extensões necessárias
