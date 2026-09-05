@@ -200,31 +200,25 @@ export default function UsuariosPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Barra de Navegação */}
-      <nav className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between h-16">
-            <div className="flex items-center space-x-3">
-              <span className="bg-purple-100 text-purple-800 text-xs font-semibold px-2.5 py-0.5 rounded uppercase tracking-wider">
-                Acesso Master
-              </span>
-              <h1 className="text-base sm:text-xl font-bold text-gray-900">
-                Gerenciamento de Acessos & Senhas
-              </h1>
-            </div>
-            <div className="flex items-center space-x-4">
-              <Link href="/admin/dashboard">
-                <Button variant="outline" size="sm">
-                  Voltar ao Dashboard
-                </Button>
-              </Link>
-            </div>
+    <div className="space-y-6 max-w-[1600px] mx-auto text-slate-900">
+      {/* Banner de Acesso Master */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-6 rounded-2xl bg-[#0f172a]/90 border border-white/10 backdrop-blur-md shadow-2xl text-white">
+        <div>
+          <div className="flex items-center gap-2 mb-1">
+            <span className="bg-amber-500/20 text-amber-300 border border-amber-500/30 text-xs font-bold px-2.5 py-0.5 rounded-full uppercase tracking-wider">
+              Acesso Master
+            </span>
           </div>
+          <h1 className="text-2xl font-black tracking-tight text-white">
+            Gerenciamento de Acessos & Senhas
+          </h1>
+          <p className="text-xs text-slate-400 mt-1">
+            Controle de permissões, aprovação de novos administradores e alteração segura de senhas.
+          </p>
         </div>
-      </nav>
+      </div>
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="space-y-6">
         {/* Banner de Feedback Global */}
         {globalFeedback && (
           <div
@@ -357,7 +351,7 @@ export default function UsuariosPage() {
             )}
           </div>
         </div>
-      </main>
+      </div>
 
       {/* Modal de Alteração de Senha */}
       {modalOpen && selectedUser && (

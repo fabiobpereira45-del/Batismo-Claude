@@ -9,6 +9,7 @@ import { generatePDF, generateIndividualPDF } from '@/lib/pdf-generator';
 import { generateExcel } from '@/lib/excel-generator';
 import { useAuth } from '@/lib/auth-context';
 import { formatDateISOToBR, calcularIdade } from '@/lib/utils';
+import WhatsAppButton from '@/components/ui/whatsapp-button';
 
 interface Inscricao {
   id: string;
@@ -217,31 +218,33 @@ export default function InscricoesPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-3 sm:p-6 md:p-8">
-      <div className="max-w-[96%] mx-auto">
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">Inscrições</h1>
-          <div className="flex flex-wrap gap-2">
-            <Button
-              onClick={handleExportPDF}
-              className="bg-blue-600 hover:bg-blue-700 text-white font-medium shadow"
-            >
-              Exportar PDF
-            </Button>
-            <Button
-              onClick={() => generateExcel(inscricoes)}
-              className="bg-green-600 hover:bg-green-700 text-white font-medium shadow"
-            >
-              Exportar Excel (XLSX)
-            </Button>
-            <Link href="/admin/estatisticas">
-              <Button variant="secondary">Estatísticas</Button>
-            </Link>
-            <Link href="/admin/dashboard">
-              <Button variant="outline">Voltar ao Dashboard</Button>
-            </Link>
-          </div>
+    <div className="space-y-6 max-w-[1600px] mx-auto text-slate-900">
+      {/* Top Banner de Ações */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-6 rounded-2xl bg-[#0f172a]/90 border border-white/10 backdrop-blur-md shadow-2xl text-white">
+        <div>
+          <h1 className="text-2xl font-black tracking-tight text-white flex items-center gap-2">
+            Membros & Inscrições
+          </h1>
+          <p className="text-xs text-slate-400 mt-1">
+            Gestão unificada, contatos diretos no WhatsApp e relatórios cadastrais completos.
+          </p>
         </div>
+
+        <div className="flex flex-wrap items-center gap-3">
+          <Button
+            onClick={handleExportPDF}
+            className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-bold text-xs shadow-lg shadow-indigo-600/20 rounded-xl"
+          >
+            Exportar PDF
+          </Button>
+          <Button
+            onClick={() => generateExcel(inscricoes)}
+            className="bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-lg shadow-emerald-600/20 rounded-xl"
+          >
+            Exportar Excel (XLSX)
+          </Button>
+        </div>
+      </div>
 
         {error && (
           <div className="bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded mb-6">
@@ -512,7 +515,13 @@ export default function InscricoesPage() {
                       </>
                     )}
                     <td className="px-3 py-3 whitespace-nowrap text-sm font-medium pl-3 pr-6">
-                      <div className="flex flex-wrap items-center gap-2">
+                      <div className="flex flex-wrap items-center gap-1.5">
+                        <WhatsAppButton
+                          telefone={inscricao.telefone}
+                          nome={inscricao.nome}
+                          igreja={inscricao.igreja}
+                          variant="icon"
+                        />
                         <Button
                           size="sm"
                           variant="secondary"
@@ -551,7 +560,6 @@ export default function InscricoesPage() {
         <div className="mt-4 text-sm text-gray-600">
           Total: {inscricoes.length} inscrição(ões)
         </div>
-      </div>
 
       {/* Modal de Visualização */}
       {viewModalData && (
@@ -622,7 +630,13 @@ export default function InscricoesPage() {
               </div>
             </div>
 
-            <div className="mt-8 flex justify-end gap-3 border-t pt-4">
+            <div className="mt-8 flex flex-wrap items-center justify-end gap-3 border-t pt-4">
+              <WhatsAppButton
+                telefone={viewModalData.telefone}
+                nome={viewModalData.nome}
+                igreja={viewModalData.igreja}
+                variant="full"
+              />
               <Button
                 variant="default"
                 onClick={() => {

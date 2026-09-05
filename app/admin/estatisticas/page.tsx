@@ -136,19 +136,15 @@ export default function EstatisticasPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 p-4 sm:p-8">
-      <div className="max-w-7xl mx-auto">
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">Estatísticas e Gráficos</h1>
-          <div className="flex flex-wrap gap-2">
-            <Link href="/admin/inscricoes">
-              <Button variant="outline">Ver Inscrições</Button>
-            </Link>
-            <Link href="/admin/dashboard">
-              <Button variant="outline">Voltar ao Dashboard</Button>
-            </Link>
-          </div>
+    <div className="space-y-6 max-w-[1600px] mx-auto text-slate-900">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-6 rounded-2xl bg-[#0f172a]/90 border border-white/10 backdrop-blur-md shadow-2xl text-white">
+        <div>
+          <h1 className="text-2xl font-black tracking-tight text-white">Estatísticas e Gráficos Setoriais</h1>
+          <p className="text-xs text-slate-400 mt-1">
+            Distribuição demográfica, pirâmide etária e relatórios analíticos por congregação e liderança.
+          </p>
         </div>
+      </div>
 
         {error && (
           <div className="bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded mb-6">
@@ -301,7 +297,6 @@ export default function EstatisticasPage() {
             </div>
           </>
         )}
-      </div>
     </div>
   );
 }

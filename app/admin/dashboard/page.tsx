@@ -7,6 +7,8 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
 import { generatePDF } from '@/lib/pdf-generator';
+import WhatsAppButton from '@/components/ui/whatsapp-button';
+import { Users, Building2, UserCheck, Sparkles, Download } from 'lucide-react';
 
 interface Inscricao {
   id: string;
@@ -153,53 +155,75 @@ export default function AdminDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-4 sm:p-8">
-      <div className="max-w-7xl mx-auto">
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">Dashboard Admin</h1>
-          <div className="space-x-4 flex items-center flex-wrap gap-y-2">
-            {isMaster && (
-              <Link href="/admin/usuarios">
-                <Button variant="default" className="bg-purple-600 hover:bg-purple-700">Gerenciar Acessos</Button>
-              </Link>
-            )}
-            <Link href="/admin/estatisticas">
-              <Button variant="secondary">Ver Estatísticas</Button>
-            </Link>
-            <Link href="/admin/inscricoes">
-              <Button>Ver Todas Inscrições</Button>
-            </Link>
-            <Button variant="outline" onClick={handleLogout}>
-              Sair
-            </Button>
+    <div className="space-y-6 max-w-[1600px] mx-auto">
+      {/* Top Banner do Dashboard */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-6 rounded-2xl bg-[#0f172a]/90 border border-white/10 backdrop-blur-md shadow-2xl">
+        <div>
+          <div className="flex items-center gap-2 mb-1">
+            <span className="p-1.5 rounded-lg bg-indigo-500/20 text-indigo-400 border border-indigo-500/30">
+              <Sparkles className="w-5 h-5" />
+            </span>
+            <h1 className="text-2xl font-black text-white tracking-tight">
+              Visão Geral do Sistema
+            </h1>
           </div>
+          <p className="text-xs text-slate-400">
+            Painel de controle setorial, métricas consolidadas e gerenciamento de congregações.
+          </p>
         </div>
 
-        {error && (
-          <div className="bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded mb-6">
-            {error}
-          </div>
-        )}
-
-        {/* Cards de Estatísticas */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <div className="bg-white p-6 rounded-lg shadow">
-            <h3 className="text-lg font-medium text-gray-500">Total de Inscrições</h3>
-            <p className="text-3xl font-bold text-gray-900 mt-2">{stats.total}</p>
-          </div>
-          <div className="bg-white p-6 rounded-lg shadow">
-            <h3 className="text-lg font-medium text-gray-500">Igrejas</h3>
-            <p className="text-3xl font-bold text-gray-900 mt-2">
-              {Object.keys(stats.porIgreja).length}
-            </p>
-          </div>
-          <div className="bg-white p-6 rounded-lg shadow">
-            <h3 className="text-lg font-medium text-gray-500">Pastores</h3>
-            <p className="text-3xl font-bold text-gray-900 mt-2">
-              {Object.keys(stats.porPastor).length}
-            </p>
-          </div>
+        <div className="flex items-center gap-3">
+          <Button
+            onClick={handleDownloadPDF}
+            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 shadow-lg shadow-indigo-600/20"
+          >
+            <Download className="w-4 h-4" />
+            <span>Relatório em PDF</span>
+          </Button>
         </div>
+      </div>
+
+      {error && (
+        <div className="bg-rose-500/10 border border-rose-500/20 text-rose-300 px-4 py-3 rounded-xl text-sm">
+          {error}
+        </div>
+      )}
+
+      {/* Cards de Estatísticas com Estética Total-Gestão */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="p-6 rounded-2xl bg-[#0f172a]/90 border border-white/10 shadow-xl backdrop-blur-md relative overflow-hidden group">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-bold uppercase tracking-wider text-indigo-400">Total de Membros</span>
+            <div className="w-10 h-10 rounded-xl bg-indigo-500/15 border border-indigo-500/30 flex items-center justify-center text-indigo-400">
+              <Users className="w-5 h-5" />
+            </div>
+          </div>
+          <p className="text-3xl font-black text-white mt-3 leading-none">{stats.total}</p>
+          <span className="text-[11px] text-slate-400 mt-2 block">Cadastros ativos no banco raiz</span>
+        </div>
+
+        <div className="p-6 rounded-2xl bg-[#0f172a]/90 border border-white/10 shadow-xl backdrop-blur-md relative overflow-hidden group">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-bold uppercase tracking-wider text-purple-400">Congregações</span>
+            <div className="w-10 h-10 rounded-xl bg-purple-500/15 border border-purple-500/30 flex items-center justify-center text-purple-400">
+              <Building2 className="w-5 h-5" />
+            </div>
+          </div>
+          <p className="text-3xl font-black text-white mt-3 leading-none">{Object.keys(stats.porIgreja).length}</p>
+          <span className="text-[11px] text-slate-400 mt-2 block">Igrejas representadas</span>
+        </div>
+
+        <div className="p-6 rounded-2xl bg-[#0f172a]/90 border border-white/10 shadow-xl backdrop-blur-md relative overflow-hidden group">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-bold uppercase tracking-wider text-amber-400">Liderança / Pastores</span>
+            <div className="w-10 h-10 rounded-xl bg-amber-500/15 border border-amber-500/30 flex items-center justify-center text-amber-400">
+              <UserCheck className="w-5 h-5" />
+            </div>
+          </div>
+          <p className="text-3xl font-black text-white mt-3 leading-none">{Object.keys(stats.porPastor).length}</p>
+          <span className="text-[11px] text-slate-400 mt-2 block">Pastores responsáveis</span>
+        </div>
+      </div>
 
         {/* Filtros */}
         <div className="bg-white p-6 rounded-lg shadow mb-6">
@@ -265,7 +289,9 @@ export default function AdminDashboard() {
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Igreja
                   </th>
-
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Contato
+                  </th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
@@ -280,7 +306,14 @@ export default function AdminDashboard() {
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       {inscricao.igreja}
                     </td>
-
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      <WhatsAppButton
+                        telefone={inscricao.telefone}
+                        nome={inscricao.nome}
+                        igreja={inscricao.igreja}
+                        variant="sm"
+                      />
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -321,7 +354,6 @@ export default function AdminDashboard() {
             </div>
           </div>
         )}
-      </div>
     </div>
   );
 }
