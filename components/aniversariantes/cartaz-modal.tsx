@@ -171,29 +171,29 @@ export default function CartazModal({
   }[theme];
 
   // Configurações de dimensão conforme formato
-  const formatDimensions = {
-    "a4-vertical": {
-      width: "w-[794px]",
-      minHeight: "min-h-[1123px]",
-      aspect: "aspect-[1/1.414]",
-      gridCols: filtrados.length <= 4 ? "grid-cols-2" : filtrados.length <= 9 ? "grid-cols-3" : "grid-cols-4",
-      avatarSize: filtrados.length <= 2 ? "w-24 h-24 text-2xl" : filtrados.length <= 6 ? "w-16 h-16 text-lg" : "w-12 h-12 text-sm"
-    },
-    "story-vertical": {
-      width: "w-[650px]",
-      minHeight: "min-h-[1155px]",
-      aspect: "aspect-[9/16]",
-      gridCols: filtrados.length <= 4 ? "grid-cols-2" : filtrados.length <= 9 ? "grid-cols-3" : "grid-cols-3",
-      avatarSize: filtrados.length <= 3 ? "w-20 h-20 text-xl" : "w-14 h-14 text-base"
-    },
-    "telao-horizontal": {
-      width: "w-[1080px]",
-      minHeight: "min-h-[608px]",
-      aspect: "aspect-[16/9]",
-      gridCols: filtrados.length <= 4 ? "grid-cols-4" : filtrados.length <= 8 ? "grid-cols-4" : "grid-cols-5",
-      avatarSize: filtrados.length <= 4 ? "w-20 h-20 text-xl" : "w-14 h-14 text-sm"
-    }
+  const n = filtrados.length;
+  const colsPorFormato = {
+    "a4-vertical": n <= 1 ? 1 : n === 2 ? 2 : n === 3 ? 3 : n <= 4 ? 2 : n <= 9 ? 3 : 4,
+    "story-vertical": n <= 1 ? 1 : n === 2 ? 2 : n === 3 ? 3 : n <= 4 ? 2 : 3,
+    "telao-horizontal": n <= 4 ? Math.max(n, 1) : n <= 8 ? 4 : 5
+  };
+  const formatBase = {
+    "a4-vertical": { width: "w-[794px]", minHeight: "min-h-[1123px]", aspect: "aspect-[1/1.414]" },
+    "story-vertical": { width: "w-[650px]", minHeight: "min-h-[1155px]", aspect: "aspect-[9/16]" },
+    "telao-horizontal": { width: "w-[1080px]", minHeight: "min-h-[608px]", aspect: "aspect-[16/9]" }
   }[format];
+  const cols = colsPorFormato[format];
+  const isHorizontal = format === "telao-horizontal";
+  const avatarPx = isHorizontal
+    ? n <= 2 ? 120 : n <= 4 ? 96 : 64
+    : n === 1 ? 190 : n <= 3 ? 110 : n <= 6 ? 84 : 60;
+  const destaque = n <= 3;
+  const gapPx = 16;
+  const cardMaxWidth = n === 1 ? (isHorizontal ? "40%" : "62%") : "100%";
+  const formatDimensions = {
+    ...formatBase,
+    cardWidth: `calc((100% - ${gapPx * (cols - 1)}px) / ${cols})`
+  };
 
   // Gerar Imagem PNG
   const handleDownloadPNG = async () => {
@@ -581,15 +581,6 @@ export default function CartazModal({
                   boxShadow: `0 0 45px rgba(0, 0, 0, 0.7), inset 0 0 35px rgba(212, 175, 55, 0.15)`
                 }}
               >
-                {/* Brilho radial de fundo para profundidade */}
-                <div
-                  className="absolute inset-0 pointer-events-none rounded-2xl opacity-60"
-                  style={{
-                    background:
-                      "radial-gradient(circle at 50% 18%, rgba(212,175,55,0.16), transparent 55%)"
-                  }}
-                />
-
                 {/* Moldura Interna Clássica Dourada */}
                 <div
                   className={`absolute inset-3 border-2 ${themeStyles.border} pointer-events-none rounded-xl opacity-75`}
@@ -627,8 +618,8 @@ export default function CartazModal({
                       {subtituloPadrao}
                     </p>
                     <h1
-                      className={`text-2xl sm:text-4xl font-black uppercase tracking-wide bg-gradient-to-r ${themeStyles.titleColor} bg-clip-text text-transparent drop-shadow-sm px-2 leading-tight`}
-                      style={{ fontFamily: "'Cinzel', 'Playfair Display', Georgia, serif" }}
+                      className="text-3xl sm:text-4xl font-black uppercase tracking-wide px-2 leading-tight"
+                      style={{ fontFamily: "'Cinzel', 'Playfair Display', Georgia, serif", color: themeStyles.accent, textShadow: "0 2px 10px rgba(0,0,0,0.35)" }}
                     >
                       {tituloPadrao}
                     </h1>
@@ -654,51 +645,64 @@ export default function CartazModal({
                     </div>
                   ) : (
                     <div
-                      className={`grid ${formatDimensions.gridCols} gap-3 sm:gap-4 items-center justify-center`}
+                      className="flex flex-wrap justify-center items-center"
+                      style={{ gap: `${gapPx}px` }}
                     >
                       {filtrados.map((m) => (
                         <div
                           key={m.id}
-                          className={`relative pt-4 px-3 pb-3 rounded-2xl border ${themeStyles.cardBg} flex flex-col items-center text-center backdrop-blur-sm shadow-lg transition-transform overflow-hidden`}
+                          className={`relative rounded-2xl border ${themeStyles.cardBg} flex flex-col items-center text-center shadow-lg`}
+                          style={{
+                            width: formatDimensions.cardWidth,
+                            maxWidth: cardMaxWidth,
+                            padding: destaque ? "22px 16px 20px" : "16px 10px 14px"
+                          }}
                         >
-                          {/* Brilho sutil no topo do cartão */}
                           <div
-                            className="absolute inset-x-0 top-0 h-10 pointer-events-none opacity-40"
+                            className={`rounded-full border font-black uppercase tracking-wide shadow-sm ${themeStyles.badgeBg}`}
                             style={{
-                              background: `linear-gradient(to bottom, ${themeStyles.accent}33, transparent)`
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              height: destaque ? 30 : 24,
+                              padding: "0 14px",
+                              fontSize: destaque ? 14 : 11,
+                              lineHeight: 1,
+                              marginBottom: destaque ? 16 : 10
                             }}
-                          />
-
-                          {/* Selo do Dia comemorado */}
-                          <div
-                            className={`relative z-10 mb-2.5 px-3 py-1 rounded-full text-[11px] font-black uppercase tracking-wide border shadow-sm ${themeStyles.badgeBg}`}
                           >
                             Dia {String(m.birthDay).padStart(2, "0")} • {MESES_DO_ANO.find((x) => x.numero === m.birthMonth)?.abreviacao}
                           </div>
 
-                          {/* Foto ou Avatar do Membro */}
                           {mostrarFotos && (
-                            <div className="relative mb-2.5">
-                              <div
-                                className="absolute -inset-1 rounded-full opacity-60 blur-[2px]"
-                                style={{ background: `${themeStyles.accent}40` }}
-                              />
+                            <div style={{ marginBottom: destaque ? 16 : 10 }}>
                               {m.foto_url ? (
                                 // eslint-disable-next-line @next/next/no-img-element
                                 <img
                                   src={m.foto_url}
                                   alt={m.nome}
-                                  className={`relative ${formatDimensions.avatarSize} rounded-full object-cover ring-[3px] ring-offset-2 ring-offset-transparent ${themeStyles.avatarRing} shadow-md`}
+                                  className="rounded-full object-cover shadow-md"
+                                  style={{
+                                    width: avatarPx,
+                                    height: avatarPx,
+                                    border: `4px solid ${themeStyles.accent}`
+                                  }}
                                   crossOrigin="anonymous"
                                 />
                               ) : (
                                 <div
-                                  className={`relative ${formatDimensions.avatarSize} rounded-full bg-gradient-to-tr from-amber-500 to-indigo-700 flex items-center justify-center font-bold text-white shadow-md ring-[3px] ${themeStyles.avatarRing}`}
+                                  className="rounded-full bg-gradient-to-tr from-amber-500 to-indigo-700 flex items-center justify-center font-bold text-white shadow-md"
+                                  style={{
+                                    width: avatarPx,
+                                    height: avatarPx,
+                                    fontSize: avatarPx / 3,
+                                    border: `4px solid ${themeStyles.accent}`
+                                  }}
                                 >
                                   {m.nome
                                     .split(" ")
                                     .slice(0, 2)
-                                    .map((n) => n[0])
+                                    .map((x) => x[0])
                                     .join("")
                                     .toUpperCase()}
                                 </div>
@@ -706,27 +710,42 @@ export default function CartazModal({
                             </div>
                           )}
 
-                          {/* Nome do Membro */}
                           <h3
-                            className={`relative z-10 font-black text-xs sm:text-sm tracking-tight leading-snug line-clamp-2 ${themeStyles.textColor}`}
+                            className={`font-black ${themeStyles.textColor}`}
+                            style={{
+                              fontSize: n === 1 ? 30 : destaque ? 18 : 14,
+                              lineHeight: 1.25,
+                              wordBreak: "break-word",
+                              paddingBottom: 2
+                            }}
                           >
                             {m.nome}
                           </h3>
 
-                          {/* Função / Cargo */}
                           {mostrarFuncao && (m.cargo || m.funcao) && (
                             <p
-                              className="relative z-10 text-[10px] font-semibold uppercase tracking-wide mt-1 truncate max-w-full"
-                              style={{ color: themeStyles.accent }}
+                              className="font-bold uppercase"
+                              style={{
+                                color: themeStyles.accent,
+                                fontSize: destaque ? 13 : 11,
+                                lineHeight: 1.3,
+                                letterSpacing: "0.08em",
+                                marginTop: 6
+                              }}
                             >
                               {m.funcao || m.cargo}
                             </p>
                           )}
 
-                          {/* Congregação */}
                           {mostrarCongregacao && (
                             <p
-                              className={`relative z-10 text-[9px] font-medium ${themeStyles.subtextColor} truncate max-w-full mt-0.5 opacity-80`}
+                              className={`font-medium ${themeStyles.subtextColor}`}
+                              style={{
+                                fontSize: destaque ? 12 : 10,
+                                lineHeight: 1.35,
+                                marginTop: 4,
+                                opacity: 0.85
+                              }}
                             >
                               {m.igreja}
                             </p>
