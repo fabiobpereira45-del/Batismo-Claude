@@ -158,6 +158,7 @@ export function processMemberBirthday(member: MemberRecord, refDate: Date = new 
 
   return {
     ...member,
+    igreja: formatNomeIgreja(member.igreja),
     birthDay: day,
     birthMonth: month,
     birthYear: year,
@@ -173,6 +174,31 @@ export function processMemberBirthday(member: MemberRecord, refDate: Date = new 
 }
 
 /**
+ * Normaliza o nome da congregação/igreja removendo a antiga sigla ADMTN
+ * e padronizando para AD Setor T. Neves ou Assembléia de Deus Setor Tancredo Neves
+ */
+export function formatNomeIgreja(igreja?: string | null): string {
+  if (!igreja || !igreja.trim()) {
+    return "Assembléia de Deus Setor Tancredo Neves";
+  }
+
+  let limpo = igreja.trim();
+
+  // Se for apenas a sigla isolada
+  if (/^ADMTN$/i.test(limpo)) {
+    return "Assembléia de Deus Setor Tancredo Neves";
+  }
+
+  // Substitui "ADMTN - " no início por "AD Setor T. Neves - "
+  limpo = limpo.replace(/^ADMTN\s*[-–—]\s*/i, "AD Setor T. Neves - ");
+
+  // Qualquer outra menção isolada à sigla ADMTN
+  limpo = limpo.replace(/\bADMTN\b/gi, "AD Setor T. Neves");
+
+  return limpo;
+}
+
+/**
  * Mensagem carinhosa e abençoada para envio no WhatsApp
  */
 export function getBirthdayWhatsAppMessage(
@@ -180,6 +206,11 @@ export function getBirthdayWhatsAppMessage(
   igreja?: string,
   pastor?: string
 ): string {
-  const saudacaoIgreja = igreja ? ` de toda a família ${igreja}` : "";
+  const nomeIgrejaLimpo = formatNomeIgreja(igreja);
+  const saudacaoIgreja = nomeIgrejaLimpo
+    ? ` de toda a família ${nomeIgrejaLimpo}`
+    : " da Assembléia de Deus Setor Tancredo Neves";
+
   return `A paz do Senhor Jesus, ${nome}! 🎂🎉\n\nNeste dia tão especial, queremos expressar nossa alegria e gratidão a Deus pela sua vida! Em nome da liderança${saudacaoIgreja}, desejamos a você um Feliz Aniversário abençoado!\n\n"O Senhor te abençoe e te guarde; o Senhor faça resplandecer o seu rosto sobre ti, e tenha misericórdia de ti; o Senhor sobre ti levante o seu rosto e te dê a paz." (Números 6:24-26)\n\nQue este novo ciclo seja repleto de graça, saúde, paz e conquistas no Senhor! Parabéns! ✨`;
 }
+

@@ -581,45 +581,61 @@ export default function CartazModal({
                   boxShadow: `0 0 45px rgba(0, 0, 0, 0.7), inset 0 0 35px rgba(212, 175, 55, 0.15)`
                 }}
               >
+                {/* Brilho radial de fundo para profundidade */}
+                <div
+                  className="absolute inset-0 pointer-events-none rounded-2xl opacity-60"
+                  style={{
+                    background:
+                      "radial-gradient(circle at 50% 18%, rgba(212,175,55,0.16), transparent 55%)"
+                  }}
+                />
+
                 {/* Moldura Interna Clássica Dourada */}
                 <div
                   className={`absolute inset-3 border-2 ${themeStyles.border} pointer-events-none rounded-xl opacity-75`}
                   style={{ borderStyle: "double" }}
                 />
+                <div
+                  className={`absolute inset-[18px] border ${themeStyles.border} pointer-events-none rounded-lg opacity-30`}
+                />
 
                 {/* Cantoneiras Ornamentadas (Cantos Superiores e Inferiores) */}
-                <div className="absolute top-4 left-4 w-6 h-6 border-t-2 border-l-2 border-amber-400 pointer-events-none" />
-                <div className="absolute top-4 right-4 w-6 h-6 border-t-2 border-r-2 border-amber-400 pointer-events-none" />
-                <div className="absolute bottom-4 left-4 w-6 h-6 border-b-2 border-l-2 border-amber-400 pointer-events-none" />
-                <div className="absolute bottom-4 right-4 w-6 h-6 border-b-2 border-r-2 border-amber-400 pointer-events-none" />
+                <div className="absolute top-4 left-4 w-8 h-8 border-t-2 border-l-2 rounded-tl-md pointer-events-none" style={{ borderColor: themeStyles.accent }} />
+                <div className="absolute top-4 right-4 w-8 h-8 border-t-2 border-r-2 rounded-tr-md pointer-events-none" style={{ borderColor: themeStyles.accent }} />
+                <div className="absolute bottom-4 left-4 w-8 h-8 border-b-2 border-l-2 rounded-bl-md pointer-events-none" style={{ borderColor: themeStyles.accent }} />
+                <div className="absolute bottom-4 right-4 w-8 h-8 border-b-2 border-r-2 rounded-br-md pointer-events-none" style={{ borderColor: themeStyles.accent }} />
 
                 {/* 1. TOPO / CABEÇALHO DO CARTAZ */}
-                <div className="relative z-10 text-center space-y-2 mb-4">
+                <div className="relative z-10 text-center space-y-2.5 mb-5">
                   {/* Logo e Nome da Igreja */}
                   <div className="flex items-center justify-center gap-3">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src="/logo-setor.png"
-                      alt="Brasão ADMTN"
-                      className="h-14 w-auto object-contain drop-shadow-md"
-                      crossOrigin="anonymous"
-                    />
+                    <div
+                      className={`p-1.5 rounded-full border ${themeStyles.border} bg-black/10 shadow-lg`}
+                    >
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src="/logo-setor.png"
+                        alt="Brasão ADMTN"
+                        className="h-14 w-14 object-contain drop-shadow-md"
+                        crossOrigin="anonymous"
+                      />
+                    </div>
                   </div>
 
-                  <div className="space-y-0.5">
-                    <p className={`text-[11px] font-bold tracking-[0.25em] uppercase ${themeStyles.subtextColor}`}>
+                  <div className="space-y-1">
+                    <p className={`text-[11px] font-bold tracking-[0.3em] uppercase ${themeStyles.subtextColor}`}>
                       {subtituloPadrao}
                     </p>
                     <h1
-                      className={`text-2xl sm:text-3xl font-black uppercase tracking-wider bg-gradient-to-r ${themeStyles.titleColor} bg-clip-text text-transparent drop-shadow`}
+                      className={`text-2xl sm:text-4xl font-black uppercase tracking-wide bg-gradient-to-r ${themeStyles.titleColor} bg-clip-text text-transparent drop-shadow-sm px-2 leading-tight`}
                       style={{ fontFamily: "'Cinzel', 'Playfair Display', Georgia, serif" }}
                     >
                       {tituloPadrao}
                     </h1>
-                    <div className="flex items-center justify-center gap-2 pt-1">
-                      <div className="h-[1px] w-12 bg-amber-400/50" />
-                      <Sparkles className="w-4 h-4 text-amber-400 shrink-0" />
-                      <div className="h-[1px] w-12 bg-amber-400/50" />
+                    <div className="flex items-center justify-center gap-3 pt-1.5">
+                      <div className="h-px w-16 sm:w-20" style={{ background: `linear-gradient(to right, transparent, ${themeStyles.accent})` }} />
+                      <Sparkles className="w-4 h-4 text-amber-400 shrink-0" style={{ color: themeStyles.accent }} />
+                      <div className="h-px w-16 sm:w-20" style={{ background: `linear-gradient(to left, transparent, ${themeStyles.accent})` }} />
                     </div>
                   </div>
                 </div>
@@ -643,29 +659,41 @@ export default function CartazModal({
                       {filtrados.map((m) => (
                         <div
                           key={m.id}
-                          className={`relative p-3 rounded-xl border ${themeStyles.cardBg} flex flex-col items-center text-center backdrop-blur-sm shadow-md transition-transform`}
+                          className={`relative pt-4 px-3 pb-3 rounded-2xl border ${themeStyles.cardBg} flex flex-col items-center text-center backdrop-blur-sm shadow-lg transition-transform overflow-hidden`}
                         >
+                          {/* Brilho sutil no topo do cartão */}
+                          <div
+                            className="absolute inset-x-0 top-0 h-10 pointer-events-none opacity-40"
+                            style={{
+                              background: `linear-gradient(to bottom, ${themeStyles.accent}33, transparent)`
+                            }}
+                          />
+
                           {/* Selo do Dia comemorado */}
                           <div
-                            className={`mb-2 px-2.5 py-0.5 rounded-full text-[11px] font-black uppercase tracking-wide border shadow-sm ${themeStyles.badgeBg}`}
+                            className={`relative z-10 mb-2.5 px-3 py-1 rounded-full text-[11px] font-black uppercase tracking-wide border shadow-sm ${themeStyles.badgeBg}`}
                           >
                             Dia {String(m.birthDay).padStart(2, "0")} • {MESES_DO_ANO.find((x) => x.numero === m.birthMonth)?.abreviacao}
                           </div>
 
                           {/* Foto ou Avatar do Membro */}
                           {mostrarFotos && (
-                            <div className="relative mb-2">
+                            <div className="relative mb-2.5">
+                              <div
+                                className="absolute -inset-1 rounded-full opacity-60 blur-[2px]"
+                                style={{ background: `${themeStyles.accent}40` }}
+                              />
                               {m.foto_url ? (
                                 // eslint-disable-next-line @next/next/no-img-element
                                 <img
                                   src={m.foto_url}
                                   alt={m.nome}
-                                  className={`${formatDimensions.avatarSize} rounded-full object-cover ring-2 ${themeStyles.avatarRing} shadow-md`}
+                                  className={`relative ${formatDimensions.avatarSize} rounded-full object-cover ring-[3px] ring-offset-2 ring-offset-transparent ${themeStyles.avatarRing} shadow-md`}
                                   crossOrigin="anonymous"
                                 />
                               ) : (
                                 <div
-                                  className={`${formatDimensions.avatarSize} rounded-full bg-gradient-to-tr from-amber-500 to-indigo-700 flex items-center justify-center font-bold text-white shadow-md ring-2 ${themeStyles.avatarRing}`}
+                                  className={`relative ${formatDimensions.avatarSize} rounded-full bg-gradient-to-tr from-amber-500 to-indigo-700 flex items-center justify-center font-bold text-white shadow-md ring-[3px] ${themeStyles.avatarRing}`}
                                 >
                                   {m.nome
                                     .split(" ")
@@ -680,14 +708,17 @@ export default function CartazModal({
 
                           {/* Nome do Membro */}
                           <h3
-                            className={`font-black text-xs sm:text-sm tracking-tight leading-snug line-clamp-2 ${themeStyles.textColor}`}
+                            className={`relative z-10 font-black text-xs sm:text-sm tracking-tight leading-snug line-clamp-2 ${themeStyles.textColor}`}
                           >
                             {m.nome}
                           </h3>
 
                           {/* Função / Cargo */}
                           {mostrarFuncao && (m.cargo || m.funcao) && (
-                            <p className="text-[10px] font-semibold text-amber-400 uppercase tracking-wide mt-0.5 truncate max-w-full">
+                            <p
+                              className="relative z-10 text-[10px] font-semibold uppercase tracking-wide mt-1 truncate max-w-full"
+                              style={{ color: themeStyles.accent }}
+                            >
                               {m.funcao || m.cargo}
                             </p>
                           )}
@@ -695,7 +726,7 @@ export default function CartazModal({
                           {/* Congregação */}
                           {mostrarCongregacao && (
                             <p
-                              className={`text-[9px] font-medium ${themeStyles.subtextColor} truncate max-w-full mt-0.5`}
+                              className={`relative z-10 text-[9px] font-medium ${themeStyles.subtextColor} truncate max-w-full mt-0.5 opacity-80`}
                             >
                               {m.igreja}
                             </p>
@@ -707,26 +738,46 @@ export default function CartazModal({
                 </div>
 
                 {/* 3. RODAPÉ DO CARTAZ (VERSÍCULO E ASSINATURA) */}
-                <div className="relative z-10 text-center space-y-3 mt-4 pt-3 border-t border-amber-400/30">
+                <div className="relative z-10 text-center space-y-3 mt-4 pt-4">
+                  {/* Separador decorativo */}
+                  <div className="flex items-center justify-center gap-3">
+                    <div className="h-px flex-1" style={{ background: `linear-gradient(to right, transparent, ${themeStyles.accent})` }} />
+                    <div
+                      className="w-1.5 h-1.5 rotate-45"
+                      style={{ background: themeStyles.accent }}
+                    />
+                    <div className="h-px flex-1" style={{ background: `linear-gradient(to left, transparent, ${themeStyles.accent})` }} />
+                  </div>
+
                   {/* Versículo Bíblico Inspirador */}
                   <div
-                    className={`p-3 rounded-xl border ${themeStyles.verseBg} text-center space-y-1`}
+                    className={`relative p-4 rounded-xl border ${themeStyles.verseBg} text-center space-y-1.5`}
                   >
-                    <p className="text-xs sm:text-[13px] italic font-serif leading-relaxed">
+                    <span
+                      className="absolute top-1 left-2.5 text-3xl font-serif opacity-30 leading-none select-none"
+                      style={{ color: themeStyles.accent }}
+                    >
+                      &ldquo;
+                    </span>
+                    <p className="text-xs sm:text-[13px] italic font-serif leading-relaxed px-3">
                       {VERSICULOS[versiculoIdx].texto}
                     </p>
-                    <p className="text-[10px] font-bold uppercase tracking-wider text-amber-400">
+                    <p
+                      className="text-[10px] font-bold uppercase tracking-wider"
+                      style={{ color: themeStyles.accent }}
+                    >
                       — {VERSICULOS[versiculoIdx].referencia}
                     </p>
                   </div>
 
                   {/* Mensagem e Assinatura Pastoral */}
-                  <div className="flex items-center justify-between text-[10px] font-semibold tracking-wider uppercase opacity-85 px-2">
+                  <div className="flex items-center justify-between text-[10px] font-semibold tracking-wider uppercase opacity-85 px-1 pt-1">
                     <span className={themeStyles.subtextColor}>
                       Celebração da Vida • Igreja Evangélica ADMTN
                     </span>
-                    <span className="text-amber-400">
-                      Pastor Setorial & Liderança
+                    <span className="flex items-center gap-1" style={{ color: themeStyles.accent }}>
+                      <Sparkles className="w-3 h-3" />
+                      Pastor Setorial &amp; Liderança
                     </span>
                   </div>
                 </div>
