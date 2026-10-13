@@ -16,7 +16,8 @@ import {
   Menu,
   X,
   Sparkles,
-  ChevronRight
+  ChevronRight,
+  Cake
 } from "lucide-react";
 
 export default function AdminSidebar() {
@@ -44,10 +45,16 @@ export default function AdminSidebar() {
       badge: null
     },
     {
+      label: "Aniversariantes",
+      href: "/admin/aniversariantes",
+      icon: Cake,
+      badge: "Novo"
+    },
+    {
       label: "Carteira de Membros",
       href: "/admin/carteira",
       icon: IdCard,
-      badge: "Novo"
+      badge: null
     },
     {
       label: "Mapa Salvador",

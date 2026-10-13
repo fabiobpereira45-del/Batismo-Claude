@@ -180,4 +180,25 @@
     page-break-after: avoid;
     break-after: avoid;
   }
+
+  /* Impressão específica do Cartaz Comemorativo */
+  .cartaz-modal-backdrop {
+    position: static !important;
+    background: transparent !important;
+    padding: 0 !important;
+    overflow: visible !important;
+  }
+  .cartaz-modal-box {
+    border: none !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    max-height: none !important;
+    overflow: visible !important;
+  }
+  #cartaz-print-area {
+    margin: 0 auto !important;
+    page-break-inside: avoid;
+    break-inside: avoid;
+    box-shadow: none !important;
+  }
 }
