@@ -38,7 +38,10 @@ export function getWhatsAppUrl(
 
   let message = "Olá!";
   if (nome && igreja) {
-    message = `Olá, ${nome}! Entramos em contato a respeito do seu cadastro na ${igreja}.`;
+    const igrejaFormatada = igreja
+      .replace(/^ADMTN\s*[-–—]\s*/i, "AD Setor T. Neves - ")
+      .replace(/\bADMTN\b/gi, "AD Setor T. Neves");
+    message = `Olá, ${nome}! Entramos em contato a respeito do seu cadastro na ${igrejaFormatada}.`;
   } else if (nome) {
     message = `Olá, ${nome}! Entramos em contato a respeito do seu cadastro de membro.`;
   }

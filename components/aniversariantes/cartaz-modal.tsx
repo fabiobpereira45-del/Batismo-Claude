@@ -19,7 +19,7 @@ import {
 } from "lucide-react";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
-import { MemberBirthday, MESES_DO_ANO } from "@/lib/aniversariantes-helper";
+import { MemberBirthday, MESES_DO_ANO, formatNomeIgreja } from "@/lib/aniversariantes-helper";
 
 interface CartazModalProps {
   isOpen: boolean;
@@ -115,8 +115,8 @@ export default function CartazModal({
   const subtituloPadrao =
     subtituloCustom ||
     (congregacaoFiltro
-      ? congregacaoFiltro
-      : "ASSEMBLEIA DE DEUS MISSÕES • SETOR TANCREDO NEVES");
+      ? formatNomeIgreja(congregacaoFiltro)
+      : "ASSEMBLÉIA DE DEUS • SETOR TANCREDO NEVES");
 
   // Configuração visual dos temas
   const themeStyles = {
@@ -615,7 +615,7 @@ export default function CartazModal({
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img
                         src="/logo-setor.png"
-                        alt="Brasão ADMTN"
+                        alt="Brasão AD Setor T. Neves"
                         className="h-14 w-14 object-contain drop-shadow-md"
                         crossOrigin="anonymous"
                       />
@@ -773,7 +773,7 @@ export default function CartazModal({
                   {/* Mensagem e Assinatura Pastoral */}
                   <div className="flex items-center justify-between text-[10px] font-semibold tracking-wider uppercase opacity-85 px-1 pt-1">
                     <span className={themeStyles.subtextColor}>
-                      Celebração da Vida • Igreja Evangélica ADMTN
+                      Celebração da Vida • Assembléia de Deus Setor Tancredo Neves
                     </span>
                     <span className="flex items-center gap-1" style={{ color: themeStyles.accent }}>
                       <Sparkles className="w-3 h-3" />

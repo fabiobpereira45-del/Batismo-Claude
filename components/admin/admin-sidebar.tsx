@@ -92,7 +92,7 @@ export default function AdminSidebar() {
           </div>
           <div>
             <h1 className="text-base font-bold text-white tracking-tight flex items-center gap-1.5">
-              ADMTN <span className="text-xs px-1.5 py-0.5 rounded bg-indigo-500/20 text-indigo-400 font-semibold border border-indigo-500/30">PRO</span>
+              AD Setor T. Neves <span className="text-xs px-1.5 py-0.5 rounded bg-indigo-500/20 text-indigo-400 font-semibold border border-indigo-500/30">PRO</span>
             </h1>
             <p className="text-[11px] font-medium text-slate-400 tracking-wide uppercase">
               Gestão Eclesiástica
@@ -226,7 +226,7 @@ export default function AdminSidebar() {
           >
             <Menu className="w-5 h-5" />
           </button>
-          <span className="font-bold text-sm tracking-tight">ADMTN Painel</span>
+          <span className="font-bold text-sm tracking-tight">AD Setor T. Neves</span>
         </div>
 
         <button
